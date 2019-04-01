@@ -10,11 +10,12 @@ class FiringMask():
     def get_mask(self):
         return self.firing_mask
     def get_2d_rows(self): # Expanded to multiple rows
-        firing_mask_2d = self.firing_mask.copy()
+        firing_mask_2d = self.firing_mask_2d_template.copy()
         firing_mask_2d[:, self.firing_mask == 1] = 1
         return firing_mask_2d
+
     def get_2d_cols(self):
-        firing_mask_2d = self.firing_mask.copy()
+        firing_mask_2d = self.firing_mask_2d_template.copy()
         
         firing_mask_2d[self.firing_mask == 1, :] = 1
         return firing_mask_2d
@@ -107,11 +108,9 @@ class WeightsDynamics():
         dynamics_term = self.eta * (self.H - self.gamma)
         dw_dt_inhibitory = (1 - self.types) * dynamics_term * trace_term
 
-        # Soft bound
-        dw_dt = (self.w_max - self.w) + dw_dt_excitatory + dw_dt_inhibitory
-
-        # Update weights with anatomical constriants
-        self.w += self.anatomy * dw_dt * self.time_step
+        # Update weights with anatomical constriants and hard bound
+        self.w += (dw_dt_excitatory + dw_dt_inhibitory) * self.time_step
+        self.w = self.anatomy * np.clip(self.w, 0, self.w_max)
 
     def set_configurations(self, configs):
         """

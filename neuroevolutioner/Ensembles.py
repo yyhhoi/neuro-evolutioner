@@ -39,7 +39,7 @@ class Ensemble_AdEx(object):
         
     def _syn_current_dynamics_update(self):
 
-        dg_dt = -self.g/self.tau_syn + (self.firing_mask.get_2d_cols * self.g_syn_constant * self.Weights.get_weights())
+        dg_dt = -self.g/self.tau_syn + (self.firing_mask.get_2d_cols() * self.g_syn_constant * self.Weights.get_weights())
         self.g += dg_dt * self.simenv.epsilon
         self._calc_synaptic_current()
 
@@ -64,7 +64,7 @@ class Ensemble_AdEx(object):
         """
         Args:
             configs: (dict) Configures of parameters and constants. It contains all two dictionaries, linked by key 'Weights' and 'Ensemble'. 
-                ['Ensemble']: All ``keys contain a (num_neurons, ) numpy array. Parameters for defining all neurons.
+                ['Ensemble']: All keys contain a (num_neurons, ) numpy array. Parameters for defining all neurons.
                     "u": ~ u_rest = -70mV = -70e-3
                     "u_rest": ~ -70mV = -70e-3
                     "r_m": 10Mohm - 1000Mohm = 10e6 - 1000e6
@@ -78,10 +78,11 @@ class Ensemble_AdEx(object):
 
                 ['SynapticCurrent']: All keys contain a (num_neurons, num_neurons) numpy array.
                     "tau_syn": ~ 5mV = 5e-3
-                    "E_syn": (Excitatory) ~ -75mV = -75e-3 or (Inhibitory) ~ 0mV = 0
+                    "E_syn": (Inhibitory) ~ -75mV = -75e-3 or (Excitatory) ~ 0mV = 0
                     "g_syn_constant": ~ 40pS = 40e-12, range = [4e-3, 4e-12]
 
-                ['Weights']: All keys contain a (num_neurons, num_neurons) numpy array.
+                ['Weights']: All keys contain a (num_neurons, num_neurons) numpy array, 
+                            except tau_LTP, tau_LTP_slow, tau_LTD, tau_ht are (num_neurons,) shape
                     "anatomy": Anatomical restriction. 0 = Never have any synapse. 1 = opposite
                     "types": 0 = inhibitory synapses, 1 = excitatory
                     "w": Initial weights
@@ -90,10 +91,10 @@ class Ensemble_AdEx(object):
                     "tau_LTP_slow": Must greater than tau_LTP
                     "tau_LTD":
                     "A": Excitatory combination 1. Internally copied to be parameter B (Excitatory combination 2)
-                    "beta":
-                    "w_p":
-                    "P": Excitatory combination 3. Strength of heterosynaptic dynamics
-                    "tau_cons":
+                    "beta": Excitatory combination 3. Strength of heterosynaptic dynamics
+                    "w_p": 0.5
+                    "P": Consolidation strength
+                    "tau_cons": 20mins = 1200
                     "transmitter_constants": Excitatory combination 4
                     "tau_hom": ~20 minutes = 1200
                     "tau_ht": ~100ms = 100e-3
