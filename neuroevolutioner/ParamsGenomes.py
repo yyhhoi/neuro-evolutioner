@@ -1,6 +1,6 @@
 import numpy as np
 from numpy.random import uniform, normal
-from params_templates.simple_minist_classification import SMC_template
+from .params_templates.simple_minist_classification import SMC_template
 
 def log10uniform(low, high, size):
     return np.power(10, uniform(np.log10(low), np.log10(high), size = size))
@@ -13,6 +13,8 @@ def gen_params_dict(num_neurons,
                     syn_range_dict,
                     weights_ranges_dict
                     ):
+    meta_dict = dict()
+    meta_dict["num_neurons"] = num_neurons
 
     ensemble_dict = dict()
     ensemble_dict["u"] = rectified_normal(ensemble_range_dict["u"][0], ensemble_range_dict["u"][1], size= (num_neurons,))
@@ -55,6 +57,7 @@ def gen_params_dict(num_neurons,
     weights_dict["gamma"] = uniform(weights_ranges_dict["gamma"][0], weights_ranges_dict["gamma"][1], size = (num_neurons, num_neurons))
 
     configs = {
+        "Meta": meta_dict,
         "Ensemble": ensemble_dict,
         "SynapticCurrent": syn_dict,
         "Weights": weights_dict
@@ -66,7 +69,7 @@ def gen_params_dict(num_neurons,
 def get_SMC_configs():
     num_neurons, ensemble_range, syn_ranges, weights_ranges = SMC_template()
     configs = gen_params_dict(num_neurons, ensemble_range, syn_ranges, weights_ranges)
-    return num_neurons, configs
+    return configs
 
 def convert_config2genes(configs):
     shapes_list = []
@@ -76,6 +79,8 @@ def convert_config2genes(configs):
     all_arrays_np = np.array([])
 
     for key_config in configs.keys():
+        if key_config == "Meta":
+            continue
         config = configs[key_config]
 
         for key in config.keys():
@@ -92,6 +97,7 @@ def convert_config2genes(configs):
             all_arrays_np = np.append(all_arrays_np, arr_flatten)
     
     genes_dict = {
+        "meta": configs["Meta"],
         "shapes": shapes_list,
         "config_keys": config_keys_list,
         "keys": keys_list,
@@ -111,12 +117,16 @@ def convert_genes2config(genes_dict):
         arr_retrieved = genes_dict["genes"][arr_start_idx: arr_end_idx].reshape(genes_dict["shapes"][idx])
         configs[genes_dict["config_keys"][idx]][genes_dict["keys"][idx]] = arr_retrieved
     
+    configs["Meta"] = genes_dict["meta"]
     return configs
 
 def test_if_two_configs_are_equal(configs1, configs2):
     for config_key in configs1.keys():
         for params_key in configs1[config_key].keys():
-            assert np.array_equal(configs1[config_key][params_key], configs2[config_key][params_key])
+            try:
+                assert np.array_equal(configs1[config_key][params_key], configs2[config_key][params_key])
+            except:
+                print("Not matched in {} {}".format(config_key, params_key))
         
     
 

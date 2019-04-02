@@ -7,7 +7,10 @@ class Ensemble_AdEx(object):
     def __init__(self, simenv, num_neurons, configs):
         self.num_neurons = num_neurons
         self.simenv = simenv
+
+        # Firing
         self.firing_mask = FiringMask(num_neurons)
+        self.firing_rate = np.zeros((num_neurons,))
 
         # External current
         self.I_ext = np.zeros((num_neurons))
@@ -17,14 +20,15 @@ class Ensemble_AdEx(object):
         self.w = np.zeros(num_neurons)
         self.g = np.zeros((num_neurons, num_neurons))
         self.synaptic_currents = np.zeros((num_neurons))
-
         self.Weights = WeightsDynamics(self.num_neurons, self.simenv.epsilon)
+
 
     def state_update(self):
         self._threshold_crossing() # Register which neurons fire and reset potentials
         self.Weights.update(self.firing_mask)
         self._syn_current_dynamics_update() 
-        self._membrane_potential_dyanmics_update() 
+        self._membrane_potential_dyanmics_update()
+
         
 
     def _membrane_potential_dyanmics_update(self):
@@ -45,7 +49,7 @@ class Ensemble_AdEx(object):
 
 
 
-    def _threshold_crossing(self):    
+    def _threshold_crossing(self):
         self.firing_mask.update_mask(self.u, self.u_threshold)
         self.u[self.firing_mask.get_mask()] = self.u_reset[self.firing_mask.get_mask()] 
 
@@ -106,6 +110,7 @@ class Ensemble_AdEx(object):
         syncurrent_dict = configs['SynapticCurrent']
         weights_dict = configs['Weights']
 
+        self.configs = configs
         self._initialise_ensembles_params(
             u = ensemble_dict["u"],
             u_rest = ensemble_dict["u_rest"],
@@ -136,7 +141,7 @@ class Ensemble_AdEx(object):
     def _initialise_weights(self, weights_config):
         self.Weights.set_configurations(weights_config)
 
-    
+
 
 
     

@@ -35,10 +35,10 @@ ana_partition_matrix = np.array([
     [0, 1, 0, 0, 0, 0]
 ])
 
-num_neurons = 644 # 64 for sensory, 500 for brain, 
+num_neurons = 344 # 64 for sensory, 200 for brain, 80 for actions
 anatomy_matrix, anatomy_labels  = create_anatomy(ana_partition_matrix,     
                                                             sensory = 64,
-                                                            brain = 500, 
+                                                            brain = 200, 
                                                             class1 = 20, 
                                                             class2 = 20, 
                                                             class3 = 20, 
@@ -48,14 +48,14 @@ types_matrix = create_types(num_neurons)
 ensemble_range = {
     "u": (-70e-3, 5e-3), # Normal dist (mean, std)
     "u_rest": (-70e-3, 5e-3), # Normal dist (mean, std)
-    "r_m": (1e6, 1000e6), # log10uniform sampling
-    "tau_m": (5e-3, 200e-3), # Uniform dist (low, high)
+    "r_m": (0.1e6, 1e6), # log10uniform sampling
+    "tau_m": (1e-3, 500e-3), # Uniform dist (low, high)
     "u_threshold": (-50e-3, -40e-3), # Uniform dist (low, high)
     "u_reset": (-46e-3, -60e-3), # Uniform dist (low, high)
     "sharpness": (2e-3, 0.5e-3), # Normal dist (mean, std)
-    "tau_w": (30e-3 , 100e-3), # Uniform dist (low, high)
+    "tau_w": (1e-3 , 500e-3), # Uniform dist (low, high)
     "a": (-1e-9, 1e-9), # Uniform dist (low, high)
-    "b": (5e-12, 60e-12) # Uniform dist (low, high)
+    "b": (1e-12, 60e-12) # Uniform dist (low, high)
 }
 syn_ranges = {
     "tau_syn": (5e-3, 0.5e-3), # Normal dist (mean, std)
@@ -76,9 +76,9 @@ weights_ranges = {
     "beta": (1e-3, 1), # Log10Uniform
     "w_p": (0.5, 0.3), # Normal dist (mean, std)
     "P": (1e-3, 10), # Log10Uniform
-    "tau_cons": (800, 1400), # Uniform
+    "tau_cons": (1, 1000), # Uniform, recommended 1200 (20mins)
     "transmitter_constants": (1e-5, 1e-2), # Log10Uniform
-    "tau_hom": (800, 1400), # Uniform
+    "tau_hom": (1, 1000), # Uniform, recommended 1200 (20mins)
     "tau_ht": (10e-3, 1000e-3), # Log10Uniform 
     "eta": (1e-3, 5), # Log10Uniform
     "gamma": (0, 5), # Uniform
@@ -88,6 +88,8 @@ weights_ranges = {
 def SMC_template():
     return num_neurons, ensemble_range, syn_ranges, weights_ranges
 
+def SMC_anatomy():
+    return anatomy_matrix, anatomy_labels
 
 if __name__ == "__main__":
     import matplotlib.pyplot as plt
