@@ -1,6 +1,7 @@
 import numpy as np
 from numpy.random import uniform, normal
 from .params_templates.simple_minist_classification import SMC_template
+from .params_templates.sequence_generation import SG_template
 
 def log10uniform(low, high, size):
     return np.power(10, uniform(np.log10(low), np.log10(high), size = size))
@@ -17,8 +18,8 @@ def gen_params_dict(num_neurons,
     meta_dict["num_neurons"] = num_neurons
 
     ensemble_dict = dict()
-    ensemble_dict["u"] = rectified_normal(ensemble_range_dict["u"][0], ensemble_range_dict["u"][1], size= (num_neurons,))
-    ensemble_dict["u_rest"] = rectified_normal(ensemble_range_dict["u_rest"][0], ensemble_range_dict["u_rest"][1], size= (num_neurons,))
+    ensemble_dict["u"] = normal(ensemble_range_dict["u"][0], ensemble_range_dict["u"][1], size= (num_neurons,))
+    ensemble_dict["u_rest"] = normal(ensemble_range_dict["u_rest"][0], ensemble_range_dict["u_rest"][1], size= (num_neurons,))
     ensemble_dict["r_m"] = log10uniform(ensemble_range_dict["r_m"][0], ensemble_range_dict["r_m"][1], (num_neurons,))
     ensemble_dict["tau_m"] = uniform(ensemble_range_dict["tau_m"][0], ensemble_range_dict["tau_m"][1], size = (num_neurons,) )
     ensemble_dict["u_threshold"] = uniform(ensemble_range_dict["u_threshold"][0], ensemble_range_dict["u_threshold"][1], size = (num_neurons,) )
@@ -70,6 +71,12 @@ def get_SMC_configs():
     num_neurons, ensemble_range, syn_ranges, weights_ranges = SMC_template()
     configs = gen_params_dict(num_neurons, ensemble_range, syn_ranges, weights_ranges)
     return configs
+
+def get_SG_configs():
+    num_neurons, ensemble_range, syn_ranges, weights_ranges = SG_template()
+    configs = gen_params_dict(num_neurons, ensemble_range, syn_ranges, weights_ranges)
+    return configs
+
 
 def convert_config2genes(configs):
     shapes_list = []
@@ -133,6 +140,12 @@ def test_if_two_configs_are_equal(configs1, configs2):
     
 
 if __name__ == "__main__":
-    num, configs = get_SMC_configs()
-    genes_dict = convert_config2genes(configs)
-    configs_recovered = convert_genes2config(genes_dict)
+    configs = get_SG_configs()
+    anatomy_matrix = configs["Weights"]["anatomy"]
+    types_matrix = configs["Weights"]["types"]
+    import matplotlib.pyplot as plt
+    plt.imshow(anatomy_matrix)
+    plt.show()
+
+    plt.imshow(types_matrix)
+    plt.show()

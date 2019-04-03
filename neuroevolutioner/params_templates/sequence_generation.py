@@ -1,25 +1,25 @@
 import numpy as np
-from .template_creation_utils.utils import create_anatomy, create_types_SMC
+from .template_creation_utils.utils import create_anatomy, create_types_SG
 
 
-
+# 0 for connection possible, 1 for no connection
 ana_partition_matrix = np.array([
-    [0, 1, 0, 0, 0, 0],
-    [0, 1, 1, 1, 1, 1],
-    [0, 1, 0, 0, 0, 0],
-    [0, 1, 0, 0, 0, 0],
-    [0, 1, 0, 0, 0, 0],
-    [0, 1, 0, 0, 0, 0]
+    [1, 0, 1, 0, 0],
+    [0, 1, 1, 0, 0],
+    [0, 0, 1, 1, 1],
+    [0, 0, 1, 1, 0],
+    [0, 0, 1, 0, 1],
+
 ])
 
+
 anatomy_matrix, anatomy_labels, num_neurons  = create_anatomy(ana_partition_matrix,     
-                                                                sensory = 64,
-                                                                brain = 200, 
-                                                                class1 = 20, 
-                                                                class2 = 20, 
-                                                                class3 = 20, 
-                                                                class4 = 20)
-types_matrix = create_types_SMC(num_neurons, anatomy_labels)
+                                                            sensory1 = 5,
+                                                            sensory2 = 5,
+                                                            brain = 70, 
+                                                            class1 = 5, 
+                                                            class2 = 5)
+types_matrix = create_types_SG(num_neurons, anatomy_labels)
 
 ensemble_range = {
     "u": (-70e-3, 5e-3), # Normal dist (mean, std)
@@ -61,10 +61,10 @@ weights_ranges = {
     "tau_H": (5, 20) # Uniform
     }
 
-def SMC_template():
+def SG_template():
     return num_neurons, ensemble_range, syn_ranges, weights_ranges
 
-def SMC_anatomy():
+def SG_anatomy():
     return anatomy_matrix, anatomy_labels
 
 if __name__ == "__main__":

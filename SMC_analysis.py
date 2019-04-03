@@ -22,8 +22,7 @@ def load_data(split_percent, n_class=4):
 
     return (X_train, Y_train, X_train.shape[0]), (X_test, Y_test, X_test.shape[0])
 
-def experiment_details():
-    pass
+
 
 def gen_condition_time_list():
     conditions = {
@@ -136,7 +135,7 @@ class Experimenter():
         
         return start, end
 
-def simulate_and_get_activity(num_gen = 1, num_species = 100, time_step = 0.00001):
+def simulate_and_get_activity(num_gen = 1, num_species = 100, time_step = 0.001):
         
         for gen_idx in range(num_gen):
             for species_idx in range(num_species):
@@ -182,7 +181,7 @@ def simulate_and_get_activity(num_gen = 1, num_species = 100, time_step = 0.0000
                     _, condition, label,  I_ext = exper.get_stimulation_info(time)
 
                     # Apply current and update the dynamics
-                    ensemble.I_ext = I_ext * 1e-9
+                    ensemble.I_ext = I_ext * 5e-8
                     ensemble.state_update()
 
                     # Increment simulation environment
