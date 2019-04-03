@@ -53,18 +53,18 @@ def gen_condition_time_list():
         times_list.append(times_list[-1] + conditions[key_to_append])
         conditions_list.append(key_to_append)
     conditions = {
-        "train_sti": 0.5, #
-        "train_response1": 0.3,
-        "train_response2": 0.3,
-        "train_response3": 0.3,
-        "train_ISI": 0.2,
+        "train_sti": 1, #
+        "train_response1": 0.5,
+        "train_response2": 0.5,
+        "train_response3": 0.5,
+        "train_ISI": 0.5,
         "train_sti_repeat": 40,
         "rest": 5,
-        "test_sti": 0.5,
-        "test_response1": 0.3,
-        "test_response2": 0.3,
-        "test_response3": 0.3,
-        "test_ISI": 0.2,
+        "test_sti": 1,
+        "test_response1": 0.5,
+        "test_response2": 0.5,
+        "test_response3": 0.5,
+        "test_ISI": 0.5,
         "test_sti_repeat": 20
     }
 
