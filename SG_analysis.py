@@ -250,7 +250,7 @@ def simulate_and_get_activity(data_dir, gen_idx = 1, species_idx = 1, time_step 
     probe.save_gene(gene)
 
 
-def proliferate_one_generation(project_results_dir, gen_idx=1, num_species=100, time_step=0.001):
+def proliferate_one_generation(project_results_dir, gen_idx=1, num_species=100, time_step=0.0005):
 
 
     for species_idx in range(num_species):
