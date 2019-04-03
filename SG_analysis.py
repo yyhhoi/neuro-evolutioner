@@ -5,6 +5,8 @@ from neuroevolutioner.ParamsGenomes import get_SG_configs, convert_config2genes,
 from neuroevolutioner.probes import Probe
 from neuroevolutioner.params_templates.sequence_generation import SG_anatomy
 
+from multiprocessing import Process
+
 import argparse
 import numpy as np
 import os
@@ -188,78 +190,81 @@ class Experimenter():
         self.I_ext = stimulus
 
 
-def simulate_and_get_activity(gen_idx = 1, num_species = 100, time_step = 0.0001):
+def simulate_and_get_activity(data_dir, gen_idx = 1, species_idx = 1, time_step = 0.0001):
+    
+    # Define storage directories
+    os.makedirs(data_dir, exist_ok=True)
+    activity_record_path = os.path.join(data_dir, "activity.csv")
+    firing_rate_path = os.path.join(data_dir, "firing_rate.csv")
+    stimuli_path = os.path.join(data_dir, "stimuli.csv")
+    gene_save_path = os.path.join(data_dir, "gene.pickle")
+    
+    # Sample from gen template distributions to create configuration of the species
+    configs = get_SG_configs()
+    num_neurons = configs["Meta"]["num_neurons"]
+    anatomy_matrix, anatomy_labels = SG_anatomy()
+
+    # Initialise experimental paradigm
+    exper = Experimenter(num_neurons, anatomy_labels)
+
+    # Initialise simulation environment and neuronal ensemble
+    simenv = Simulation(exper.max_time, epsilon=time_step)
+    ensemble = Ensemble_AdEx(simenv, num_neurons, configs)
+    ensemble.initialize_parameters(configs)
+    
+    # Initialise probing
+    probe = Probe(
+        num_neurons = num_neurons,
+        activity_record_path = activity_record_path,
+        stimuli_record_path = stimuli_path,
+        gene_save_path = gene_save_path
+    )
+    
+    # Simulation starts
+    while simenv.sim_stop == False:
+        time  = simenv.getTime()
+        # Print progress
+        print("\r{}/{}".format(time,exper.max_time), flush=True, end="")
         
+        # Get current conditions and amount of external currents, given current time
+        _, condition, label,  I_ext = exper.get_stimulation_info(time)
+
+        # Apply current and update the dynamics
+        ensemble.I_ext = I_ext * 1e-6
+        ensemble.state_update()
+
+        # Increment simulation environment
+        simenv.increment()
+
+        # Write out records
+        probe.write_out_activity(time, ensemble.firing_mask.get_mask().astype(int).astype(str))
+        probe.write_out_stimuli(time, condition, label, ensemble.I_ext.astype(str))
+        
+    
+    # Save genes
+    print("\nSaving the genes")
+    gene = convert_config2genes(configs)
+    probe.save_gene(gene)
+
+
+def proliferate_one_generation(project_results_dir, gen_idx=1, num_species=100, time_step=0.001):
+
 
     for species_idx in range(num_species):
-        # Print out curent session
-        print("Generation: {} | Species: {}/{}".format(gen_idx, species_idx+1, num_species))
-
-        # Define storage directories
-        data_dir = "experiment_results/sequence_generation/generation_{}/species_{}/".format(gen_idx, species_idx+1)
+        data_dir = os.path.join(project_results_dir, "/generation_{}/species_{}/".format(gen_idx, species_idx+1))
         os.makedirs(data_dir, exist_ok=True)
-        activity_record_path = os.path.join(data_dir, "activity.csv")
-        firing_rate_path = os.path.join(data_dir, "firing_rate.csv")
-        stimuli_path = os.path.join(data_dir, "stimuli.csv")
-        gene_save_path = os.path.join(data_dir, "gene.pickle")
-        
-        # Sample from gen template distributions to create configuration of the species
-        configs = get_SG_configs()
-        num_neurons = configs["Meta"]["num_neurons"]
-        anatomy_matrix, anatomy_labels = SG_anatomy()
-
-        # Initialise experimental paradigm
-        exper = Experimenter(num_neurons, anatomy_labels)
-
-        # Initialise simulation environment and neuronal ensemble
-        simenv = Simulation(exper.max_time, epsilon=time_step)
-        ensemble = Ensemble_AdEx(simenv, num_neurons, configs)
-        ensemble.initialize_parameters(configs)
-        
-        # Initialise probing
-        probe = Probe(
-            num_neurons = num_neurons,
-            activity_record_path = activity_record_path,
-            stimuli_record_path = stimuli_path,
-            gene_save_path = gene_save_path
-        )
-        
-        # Simulation starts
-        while simenv.sim_stop == False:
-            time  = simenv.getTime()
-            # Print progress
-            print("\r{}/{}".format(time,exper.max_time), flush=True, end="")
-            
-            # Get current conditions and amount of external currents, given current time
-            _, condition, label,  I_ext = exper.get_stimulation_info(time)
-
-            # Apply current and update the dynamics
-            ensemble.I_ext = I_ext * 1e-6
-            ensemble.state_update()
-
-            # Increment simulation environment
-            simenv.increment()
-
-            # Write out records
-            probe.write_out_activity(time, ensemble.firing_mask.get_mask().astype(int).astype(str))
-            probe.write_out_stimuli(time, condition, label, ensemble.I_ext.astype(str))
-            
-        
-        # Save genes
-        print("\nSaving the genes")
-        gene = convert_config2genes(configs)
-        probe.save_gene(gene)
-
-
+        if os.path.isfile(os.path.join(data_dir, "gene.pickle")) :
+            print("Generation {} and species {} exist. Skipped".format(gen_idx, species_idx))
+        else:
+            print("Generation: {} | Species: {}/{}".format(gen_idx, species_idx, num_species))
+            simulate_and_get_activity(data_dir,  gen_idx=gen_idx, species_idx=species_idx, time_step=time_step)
 
 if __name__ == "__main__":
 
-    parser = argparse.ArgumentParser(description='Process some integers.')
-    parser.add_argument('--gen-idx', metavar='N', type=int,
-                        help='Index of the genaration')
-    args = parser.parse_args()
+    project_results_dir = "experiment_results/sequence_generation"
+    proliferate_one_generation(project_results_dir)
 
-    simulate_and_get_activity(gen_idx=args.gen_idx)
+    
     # # Debug of times and conditions list
     # times_list, conditions_list, conditions = gen_condition_time_list()
     # for time,cond in zip(times_list, conditions_list):
@@ -272,13 +277,10 @@ if __name__ == "__main__":
     # exper = Experimenter(num_neurons, anatomy_labels)
     # time_step = 0.1
     # simenv = Simulation(exper.max_time, epsilon=time_step)
-    
     # while simenv.sim_stop == False:
     #     time  = simenv.getTime()
-        
     #     # Get current conditions and amount of external currents, given current time
     #     _, condition, label,  I_ext = exper.get_stimulation_info(time)
-
     #     print("time: %0.3f | Condition: %s | label: %s\n I_ext_sen:\n%s\n I_ext_act:\n%s" %(time, condition, label,
     #                                                                                         str(list(I_ext[0:anatomy_labels["sensory2"]])),
     #                                                                                         str(list(I_ext[anatomy_labels["brain"]:anatomy_labels["class2"]]))
