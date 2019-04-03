@@ -161,12 +161,15 @@ class Experimenter():
             elif self.condition == "test_response1":
                 action_sequence = self.Y_test[self.sampled_idxes_test[self.current_sampled_idx_test], ]
                 self.label = "test_response_" + "".join(action_sequence[0, ].flatten().astype(int).astype(str))
+                self.I_ext = np.zeros(self.num_neurons)
             elif self.condition == "test_response2":
                 action_sequence = self.Y_test[self.sampled_idxes_test[self.current_sampled_idx_test], ]
                 self.label = "test_response_" + "".join(action_sequence[1, ].flatten().astype(int).astype(str))
+                self.I_ext = np.zeros(self.num_neurons)
             elif self.condition == "test_response3":
                 action_sequence = self.Y_test[self.sampled_idxes_test[self.current_sampled_idx_test], ]
-                self.label = "test_response_" + "".join(action_sequence[2, ].flatten().astype(int).astype(str))    
+                self.label = "test_response_" + "".join(action_sequence[2, ].flatten().astype(int).astype(str)) 
+                self.I_ext = np.zeros(self.num_neurons)   
                 self.current_sampled_idx_test += 1
             else:
                 self.label = np.nan
