@@ -44,6 +44,7 @@ class Ensemble_AdEx(object):
     def _syn_current_dynamics_update(self):
 
         dg_dt = -self.g/self.tau_syn + (self.firing_mask.get_2d_cols() * self.g_syn_constant * self.Weights.get_weights())
+        
         self.g += dg_dt * self.simenv.epsilon
         self._calc_synaptic_current()
 

@@ -233,7 +233,7 @@ def simulate_and_get_activity(data_dir, gen_idx = 1, species_idx = 1, time_step 
         _, condition, label,  I_ext = exper.get_stimulation_info(time)
 
         # Apply current and update the dynamics
-        ensemble.I_ext = I_ext * 1e-6
+        ensemble.I_ext = I_ext * 1
         ensemble.state_update()
 
         # Increment simulation environment
@@ -254,7 +254,7 @@ def proliferate_one_generation(project_results_dir, gen_idx=1, num_species=100, 
 
 
     for species_idx in range(num_species):
-        data_dir = os.path.join(project_results_dir, "/generation_{}/species_{}/".format(gen_idx, species_idx+1))
+        data_dir = os.path.join(project_results_dir, "generation_{}/species_{}/".format(gen_idx, species_idx+1))
         os.makedirs(data_dir, exist_ok=True)
         if os.path.isfile(os.path.join(data_dir, "gene.pickle")) :
             print("Generation {} and species {} exist. Skipped".format(gen_idx, species_idx))
