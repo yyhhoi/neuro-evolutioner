@@ -18,6 +18,9 @@ def create_anatomy(ana_partition_matrix, **kwargs):
 
     return anatomy_matrix, labels_indexes, anatomy_matrix.shape[0]
 
+def create_types_BC(num_neurons, anatomy_labels):
+    types_matrix = np.random.uniform(0,1, (num_neurons, num_neurons))
+    return types_matrix
 
 def create_types_SG(num_neurons, anatomy_labels):
     types_matrix = np.random.uniform(0,1, (num_neurons, num_neurons))

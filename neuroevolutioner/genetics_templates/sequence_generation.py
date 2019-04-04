@@ -2,6 +2,7 @@ import numpy as np
 from .template_creation_utils.utils import create_anatomy, create_types_SG
 
 
+# Define anatomy
 # 0 for connection possible, 1 for no connection
 ana_partition_matrix = np.array([
     [1, 0, 1, 0, 0],
@@ -12,7 +13,6 @@ ana_partition_matrix = np.array([
 
 ])
 
-
 anatomy_matrix, anatomy_labels, num_neurons  = create_anatomy(ana_partition_matrix,     
                                                             sensory1 = 5,
                                                             sensory2 = 5,
@@ -21,10 +21,15 @@ anatomy_matrix, anatomy_labels, num_neurons  = create_anatomy(ana_partition_matr
                                                             class2 = 5)
 types_matrix = create_types_SG(num_neurons, anatomy_labels)
 
+
+# Define distribution of the parameters
+# (param1, param2, sampling_methods, dimension)
+# sampling_methods = {0, 1, 2}, 0 = Normal, 1 = Uniform, 2 = Log10Uniform
+# (param1, param2) = (mean, std) in Normal distribution. While, (param1, param2) = (min, max) in Uniform/Log10Uniform distribution
+# dimension = {1, 2}. 1 = 1d-array, 2 = 2d-array
 ensemble_range = {
-    "u": (-70e-3, 5e-3), # Normal dist (mean, std)
-    "u_rest": (-70e-3, 5e-3), # Normal dist (mean, std)
-    "r_m": (0.1e6, 1e6), # log10uniform sampling
+    "u_rest": (-70e-3, 5e-3, 0), # Normal dist (mean, std)
+    "r_m": (0.1e6, 1e6, 2), # Log10uniform sampling
     "tau_m": (1e-3, 500e-3), # Uniform dist (low, high)
     "u_threshold": (-50e-3, -40e-3), # Uniform dist (low, high)
     "u_reset": (-46e-3, -60e-3), # Uniform dist (low, high)

@@ -4,7 +4,7 @@ from .examplar_params import Params
 
 
 class Ensemble_AdEx(object):
-    def __init__(self, simenv, num_neurons, configs):
+    def __init__(self, simenv, num_neurons):
         self.num_neurons = num_neurons
         self.simenv = simenv
 
@@ -16,7 +16,6 @@ class Ensemble_AdEx(object):
         self.I_ext = np.zeros((num_neurons))
 
         # Declare dynamics variables
-        self.u = np.zeros(num_neurons)
         self.w = np.zeros(num_neurons)
         self.g = np.zeros((num_neurons, num_neurons))
         self.synaptic_currents = np.zeros((num_neurons))
@@ -34,10 +33,10 @@ class Ensemble_AdEx(object):
     def _membrane_potential_dyanmics_update(self):
 
         non_linear_kernal = -(self.u - self.u_rest) + self.sharpness * np.exp((self.u-self.u_threshold)/self.sharpness)
-        du_dt = (non_linear_kernal - self.r_m * self.w + self.r_m * self.I_ext - self.synaptic_currents)/self.tau_m
-
+        du_dt = (non_linear_kernal - self.r_m * self.w + self.r_m * self.I_ext - self.r_m * self.synaptic_currents)/self.tau_m
+        
         dw_dt = (self.a * (self.u - self.u_rest) - self.w + (self.b * self.tau_w * self.firing_mask.get_mask()) )/self.tau_w
-
+        
         self.u += du_dt * self.simenv.epsilon
         self.w += dw_dt * self.simenv.epsilon
         
@@ -107,29 +106,26 @@ class Ensemble_AdEx(object):
                     "gamma":
                     "tau_H": ~10s = 10
         """
-        ensemble_dict = configs['Ensemble']
-        syncurrent_dict = configs['SynapticCurrent']
-        weights_dict = configs['Weights']
 
         self.configs = configs
         self._initialise_ensembles_params(
-            u = ensemble_dict["u"],
-            u_rest = ensemble_dict["u_rest"],
-            r_m = ensemble_dict["r_m"],
-            tau_m = ensemble_dict["tau_m"],
-            u_threshold = ensemble_dict["u_threshold"],
-            u_reset = ensemble_dict["u_reset"],
-            sharpness = ensemble_dict["sharpness"],
-            tau_w = ensemble_dict["tau_w"],
-            a = ensemble_dict["a"],
-            b = ensemble_dict["b"]
+            u = configs["u_rest"],
+            u_rest = configs["u_rest"],
+            r_m = configs["r_m"],
+            tau_m = configs["tau_m"],
+            u_threshold = configs["u_threshold"],
+            u_reset = configs["u_reset"],
+            sharpness = configs["sharpness"],
+            tau_w = configs["tau_w"],
+            a = configs["a"],
+            b = configs["b"]
             )
         self._initialise_synaptic_current_params(
-            tau_syn = syncurrent_dict["tau_syn"],
-            E_syn = syncurrent_dict["E_syn"],
-            g_syn_constant = syncurrent_dict["g_syn_constant"]
+            tau_syn = configs["tau_syn"],
+            E_syn = configs["E_syn"],
+            g_syn_constant = configs["g_syn_constant"]
             )
-        self._initialise_weights(weights_dict)
+        self._initialise_weights(configs)
         
 
     def _initialise_ensembles_params(self, u, u_rest, r_m, tau_m, u_threshold, u_reset, sharpness, tau_w, a, b ):

@@ -18,8 +18,8 @@ def gen_params_dict(num_neurons,
     meta_dict["num_neurons"] = num_neurons
 
     ensemble_dict = dict()
-    ensemble_dict["u"] = normal(ensemble_range_dict["u"][0], ensemble_range_dict["u"][1], size= (num_neurons,))
     ensemble_dict["u_rest"] = normal(ensemble_range_dict["u_rest"][0], ensemble_range_dict["u_rest"][1], size= (num_neurons,))
+    ensemble_dict["u"] = ensemble_dict["u_rest"]
     ensemble_dict["r_m"] = log10uniform(ensemble_range_dict["r_m"][0], ensemble_range_dict["r_m"][1], (num_neurons,))
     ensemble_dict["tau_m"] = uniform(ensemble_range_dict["tau_m"][0], ensemble_range_dict["tau_m"][1], size = (num_neurons,) )
     ensemble_dict["u_threshold"] = uniform(ensemble_range_dict["u_threshold"][0], ensemble_range_dict["u_threshold"][1], size = (num_neurons,) )

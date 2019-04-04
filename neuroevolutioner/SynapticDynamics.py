@@ -138,7 +138,7 @@ class WeightsDynamics():
 
         """
         self._initialise_params(
-            anatomy = configs["anatomy"], types = configs["types"], w = configs["w"], w_max = configs["w_max"],
+            anatomy = configs["anatomy_matrix"], types = configs["types_matrix"], w = configs["w"], w_max = configs["w_max"],
             tau_LTP = configs["tau_LTP"], tau_LTP_slow = configs["tau_LTP_slow"], tau_LTD = configs["tau_LTD"], A = configs["A"],
             beta = configs["beta"], w_p = configs["w_p"], P = configs["P"], tau_cons = configs["tau_cons"],
             transmitter_constants = configs["transmitter_constants"],

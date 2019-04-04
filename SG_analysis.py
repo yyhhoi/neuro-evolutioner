@@ -193,7 +193,7 @@ class Experimenter():
         self.I_ext = stimulus
 
 
-def simulate_and_get_activity(data_dir, gen_idx = 1, species_idx = 1, time_step = 0.0001):
+def simulate_and_get_activity(data_dir, gen_idx = 1, species_idx = 1, time_step = 0.0005):
     
     # Define storage directories
     os.makedirs(data_dir, exist_ok=True)
@@ -233,7 +233,7 @@ def simulate_and_get_activity(data_dir, gen_idx = 1, species_idx = 1, time_step 
         _, condition, label,  I_ext = exper.get_stimulation_info(time)
 
         # Apply current and update the dynamics
-        ensemble.I_ext = I_ext * 1
+        ensemble.I_ext = I_ext * 5e-7
         ensemble.state_update()
 
         # Increment simulation environment
