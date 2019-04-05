@@ -1,7 +1,7 @@
 from neuroevolutioner.Environments import Simulation
 from neuroevolutioner.Ensembles import Ensemble_AdEx
-from neuroevolutioner.utils import load_pickle, write_pickle
-from neuroevolutioner.genetics import initialise_BC_params
+from neuroevolutioner.utils import load_pickle, write_pickl
+from neuroevolutioner.genetics import BC_ParamsInitialiser
 from neuroevolutioner.probes import Probe
 
 import argparse
@@ -100,7 +100,8 @@ def simulate_and_get_activity(data_dir, gen_idx = 1, species_idx = 1, time_step 
     gene_save_path = os.path.join(data_dir, "gene.pickle")
     
     # Sample from gen template distributions to create configuration of the species
-    configs = initialise_BC_params()
+    params_initialiser = BC_ParamsInitialiser()
+    configs = params_initialiser.sample_new_configs()
     num_neurons = configs["num_neurons"]
     anatomy_matrix, anatomy_labels = configs["anatomy_matrix"], configs["anatomy_labels"]
 

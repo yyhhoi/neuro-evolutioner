@@ -1,7 +1,7 @@
 from neuroevolutioner.Environments import Simulation
 from neuroevolutioner.Ensembles import Ensemble_AdEx
 from neuroevolutioner.utils import load_pickle, write_pickle
-from neuroevolutioner.genetics import initialise_TL_params
+from neuroevolutioner.genetics import TL_ParamsInitialiser
 from neuroevolutioner.probes import Probe
 
 import argparse
@@ -20,7 +20,7 @@ def gen_condition_time_list():
         "rest1": 2,
         "test_S": 1,
         "test_ISI": 0.5,
-        "Test_A":0.5,
+        "test_A":0.5,
         "repeat": 1
     }
 
@@ -35,7 +35,7 @@ def gen_condition_time_list():
         appending("rest1")
         appending("test_S")
         appending("test_ISI")
-        appending("Test_A")
+        appending("test_A")
     return times_list, conditions_list, conditions
 
 
@@ -95,7 +95,8 @@ def simulate_and_get_activity(data_dir, gen_idx = 1, species_idx = 1, time_step 
     gene_save_path = os.path.join(data_dir, "gene.pickle")
     
     # Sample from gen template distributions to create configuration of the species
-    configs = initialise_TL_params()
+    params_initialiser = TL_ParamsInitialiser()
+    configs = params_initialiser.sample_new_configs()
     num_neurons = configs["num_neurons"]
     anatomy_matrix, anatomy_labels = configs["anatomy_matrix"], configs["anatomy_labels"]
 
@@ -140,7 +141,7 @@ def simulate_and_get_activity(data_dir, gen_idx = 1, species_idx = 1, time_step 
     probe.save_gene(configs)
 
 
-def proliferate_one_generation(project_results_dir, gen_idx=1, num_species=100, time_step=0.0005):
+def proliferate_one_generation(project_results_dir, gen_idx=1, num_species=1000, time_step=0.0005):
 
 
     for species_idx in range(num_species):

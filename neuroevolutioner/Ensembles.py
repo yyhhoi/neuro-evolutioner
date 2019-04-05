@@ -1,6 +1,5 @@
 import numpy as np
 from .SynapticDynamics import FiringMask, WeightsDynamics
-from .examplar_params import Params
 
 
 class Ensemble_AdEx(object):
