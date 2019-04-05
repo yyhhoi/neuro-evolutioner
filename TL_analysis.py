@@ -1,91 +1,21 @@
 from neuroevolutioner.Environments import Simulation
 from neuroevolutioner.Ensembles import Ensemble_AdEx
 from neuroevolutioner.utils import load_pickle, write_pickle
-from neuroevolutioner.genetics import TL_ParamsInitialiser
-from neuroevolutioner.probes import Probe
+from neuroevolutioner.Genetics import TL_ParamsInitialiser, ConfigsConverter, TL_FitnessMeasurer
+from neuroevolutioner.Experiments import TL_Experimenter
+from neuroevolutioner.Probes import Probe
+from glob import glob
 
-import argparse
 import numpy as np
 import os
-
-
-def gen_condition_time_list():
-    def appending(key_to_append):
-        times_list.append(times_list[-1] + conditions[key_to_append])
-        conditions_list.append(key_to_append)
-    conditions = {
-        "train_S": 1,
-        "train_ISI": 0.5,
-        "train_A": 0.5,
-        "rest1": 2,
-        "test_S": 1,
-        "test_ISI": 0.5,
-        "test_A":0.5,
-        "repeat": 1
-    }
-
-    times_list = []
-    conditions_list = []
-    # Training stimulus and ISI repeated for many times
-    for i in range(conditions["repeat"]):
-        times_list.append(0 + conditions["train_S"])
-        conditions_list.append("train_S")
-        appending("train_ISI")
-        appending("train_A")
-        appending("rest1")
-        appending("test_S")
-        appending("test_ISI")
-        appending("test_A")
-    return times_list, conditions_list, conditions
+import pandas as pd
 
 
 
-class Experimenter():
-    def __init__(self, num_neurons, anatomy_labels):
-
-        self.num_neurons = num_neurons
-        self.anatomy_labels = anatomy_labels
-        self.times_list, self.conditions_list, self.conditions_dict = gen_condition_time_list()
-        self.I_ext = np.zeros(num_neurons)
-
-        self.max_time_idx = len(self.times_list)
-        self.max_time = max(self.times_list)
-        self.current_time_idx = 0
-        self.label = np.nan
-        self.condition = "rest"
-    def get_stimulation_info(self, time):
-        
-        
-        if self.current_time_idx == 0:
-            condition_statement = ((time > 0) and (time < self.times_list[self.current_time_idx]))
-
-        elif self.current_time_idx < self.max_time_idx:
-            condition_statement = ((time > self.times_list[self.current_time_idx-1]) and (time < self.times_list[self.current_time_idx]))
-
-        else:
-            condition_statement = False
-
-        if condition_statement:
-            # print("%s: %0.5f < %0.5f < %0.5f" % ("Condition", self.times_list[self.current_time_idx-1], time, self.times_list[self.current_time_idx]) )
-            self.condition = self.conditions_list[self.current_time_idx]    
-            self._update_I_ext_stimuli(self.condition)
-            
-            self.current_time_idx += 1 # This is important - to ensure efficient increment
-
-        return time, self.condition, self.label,  self.I_ext
-
-    def _update_I_ext_stimuli(self, condition): # stimuli_pattern = ndarray(0, 1)... etc
-        stimulus = np.zeros(self.num_neurons)
-        if (condition == "train_S") or (condition == "test_S"):
-            stimulus[0:self.anatomy_labels["sensory1"]] = 1
-        elif condition == "train_A":
-            stimulus[self.anatomy_labels["brain2"]: self.anatomy_labels["action1"]] = 1
-
-        self.I_ext = stimulus
 
 
 
-def simulate_and_get_activity(data_dir, gen_idx = 1, species_idx = 1, time_step = 0.0005):
+def simulate_and_get_activity(data_dir, configs = None, gen_idx = 1, species_idx = 1, time_step = 0.0005):
     
     # Define storage directories
     os.makedirs(data_dir, exist_ok=True)
@@ -96,12 +26,13 @@ def simulate_and_get_activity(data_dir, gen_idx = 1, species_idx = 1, time_step 
     
     # Sample from gen template distributions to create configuration of the species
     params_initialiser = TL_ParamsInitialiser()
-    configs = params_initialiser.sample_new_configs()
+    if configs is None:
+        configs = params_initialiser.sample_new_configs()
     num_neurons = configs["num_neurons"]
     anatomy_matrix, anatomy_labels = configs["anatomy_matrix"], configs["anatomy_labels"]
 
     # Initialise experimental paradigm
-    exper = Experimenter(num_neurons, anatomy_labels)
+    exper = TL_Experimenter(num_neurons, anatomy_labels)
 
     # Initialise simulation environment and neuronal ensemble
     simenv = Simulation(exper.max_time, epsilon=time_step)
@@ -141,11 +72,10 @@ def simulate_and_get_activity(data_dir, gen_idx = 1, species_idx = 1, time_step 
     probe.save_gene(configs)
 
 
-def proliferate_one_generation(project_results_dir, gen_idx=1, num_species=1000, time_step=0.0005):
-
+def proliferate_first_generation(project_results_dir, gen_idx=1, num_species=1000, time_step=0.0005):
 
     for species_idx in range(num_species):
-        data_dir = os.path.join(project_results_dir, "generation_{}/species_{}/".format(gen_idx, species_idx+1))
+        data_dir = os.path.join(project_results_dir, "generation_{}/species_{}/".format(gen_idx, species_idx))
         os.makedirs(data_dir, exist_ok=True)
         if os.path.isfile(os.path.join(data_dir, "gene.pickle")) :
             print("Generation {} and species {} exist. Skipped".format(gen_idx, species_idx))
@@ -153,11 +83,49 @@ def proliferate_one_generation(project_results_dir, gen_idx=1, num_species=1000,
             print("Generation: {} | Species: {}/{}".format(gen_idx, species_idx, num_species))
             simulate_and_get_activity(data_dir,  gen_idx=gen_idx, species_idx=species_idx, time_step=time_step)
 
+def evaluate_generation_fitness(project_results_dir, gen_idx):
+    generation_dir = os.path.join(project_results_dir, "generation_{}".format(gen_idx))
+    hall_of_fame_path = os.path.join(project_results_dir, "hall_of_fame", "generation_{}.csv".format(gen_idx))
+    all_species_dirs = sorted(glob(os.path.join(generation_dir, "*")))
+    num_species = len(all_species_dirs)
+    species_score_map = dict()
+    species_idx_list, scores_list = [], []
+
+    fh = open(hall_of_fame_path, "w")
+    fh.write("species_idx,score\n")
+
+    for i in range(num_species):
+
+        activity_csv_path = os.path.join(generation_dir, "species_{}".format(i), "activity.csv")
+        activity = pd.read_csv(activity_csv_path)
+        
+        # Evaluate the fitness score
+        measurer = TL_FitnessMeasurer(activity)
+        measurer.build_score_criteria()
+        fitness_score = measurer.calc_fitness()
+        species_idx_list.append(i)
+        scores_list.append(fitness_score)
+        fh.write("%d,%0.4f\n" % (i, fitness_score))
+        print("Evaluated {}/{}: Score = {}".format(i, num_species, fitness_score))
+    fh.close()
+    species_score_map["species_idx"], species_score_map["score"] = species_idx_list, scores_list
+    score_df = pd.DataFrame(species_score_map)
+    return score_df
+
+# def evolute_one_generation(projectscore_df)
+
+
+    
+
+
 if __name__ == "__main__":
 
     project_results_dir = "experiment_results/time_learning"
-    proliferate_one_generation(project_results_dir)
-
+    
+    proliferate_first_generation(project_results_dir, 2)
+    
+    # score_df = evaluate_generation_fitness(project_results_dir, 1)
+    # print(score_df.head())
     
     # # Debug of times and conditions list
     # times_list, conditions_list, conditions = gen_condition_time_list()

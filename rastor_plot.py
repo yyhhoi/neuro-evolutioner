@@ -7,7 +7,7 @@ import numpy as np
 
 base_dir = "experiment_results/time_learning/generation_1"
 all_species_paths = glob(os.path.join(base_dir, "*"))
-
+num_species = len(all_species_paths)
 stimuli_dict = {
     "train_S": [2],
     "train_A": [11],
@@ -25,8 +25,10 @@ def produce_stimuli_raster(firing, stimuli_dict):
     return stimuli_np
         
 
-
-for idx, species_path in enumerate(all_species_paths):
+for idx in range(num_species):
+    if idx not in [90,906,863,748,93,144,1000,105,793,966,196,781,822,379,137,971,613,501,870,958,486,873,467,478,931,534,326,34,959]:
+        continue
+    species_path = os.path.join(base_dir, "species_{}".format(idx))
     firing_data_path = os.path.join(species_path, "activity.csv")
     firing = pd.read_csv(firing_data_path)
 
@@ -52,10 +54,10 @@ for idx, species_path in enumerate(all_species_paths):
     ran_vec = np.random.choice(stimuli_np.shape[0], size = (200,))
     stimuli_np = stimuli_np[ran_vec, :]
 
-    if firing_np.shape[0] > 500:
-        np.random.seed(90)
-        ran_vec = np.random.choice(firing_np.shape[0], size = (500,))
-        firing_np = firing_np[ran_vec, :]
+    # if firing_np.shape[0] > 500:
+    #     np.random.seed(90)
+    #     ran_vec = np.random.choice(firing_np.shape[0], size = (500,))
+    #     firing_np = firing_np[ran_vec, :]
     fig, ax = plt.subplots()
     ax.eventplot(stimuli_np[:, 2:].T, alpha=0.1)
     ax.eventplot(firing_np.T, color = "r")

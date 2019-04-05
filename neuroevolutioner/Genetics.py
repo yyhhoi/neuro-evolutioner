@@ -1,5 +1,5 @@
-from genetics_templates.basic_connectivity import BC_get_params_dict
-from genetics_templates.time_learning import TL_get_params_dict
+from .genetics_templates.basic_connectivity import BC_get_params_dict
+from .genetics_templates.time_learning import TL_get_params_dict
 from numpy.random import uniform, normal
 import numpy as np
 import pandas as pd
