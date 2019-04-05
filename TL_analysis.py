@@ -21,7 +21,6 @@ def gen_condition_time_list():
         "test_S": 1,
         "test_ISI": 0.5,
         "Test_A":0.5,
-        "rest2": 0.5,
         "repeat": 1
     }
 
@@ -36,7 +35,7 @@ def gen_condition_time_list():
         appending("rest1")
         appending("test_S")
         appending("test_ISI")
-        appending("rest2")
+        appending("Test_A")
     return times_list, conditions_list, conditions
 
 
@@ -133,8 +132,7 @@ def simulate_and_get_activity(data_dir, gen_idx = 1, species_idx = 1, time_step 
         simenv.increment()
 
         # Write out records
-        probe.write_out_activity(time, ensemble.firing_mask.get_mask().astype(int).astype(str))
-        probe.write_out_stimuli(time, condition, label, ensemble.I_ext.astype(str))
+        probe.write_out_activity(time, condition, ensemble.firing_mask.get_mask().astype(int).astype(str))
         
     
     # Save genes
