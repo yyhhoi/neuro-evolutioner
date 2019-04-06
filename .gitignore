@@ -1,3 +1,4 @@
 *.pyc
 **/experiment_results/
 **/experiment_results/*
+**/*.pyc
