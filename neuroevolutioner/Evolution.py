@@ -12,7 +12,7 @@ import pandas as pd
 from glob import glob
 
 class Evolutioner(ABC):
-    def __init__(self, project_name, num_generations=10, num_species=1000, time_step = 0.0005):
+    def __init__(self, project_name, num_generations=10, num_species=1000, time_step = 0.005):
         self.project_name, self.num_gens, self.num_species = project_name, num_generations, num_species
         self.activity_results_filename, self.gene_results_filename, self.HOF_filename = "activity.csv", "gene.pickle", "hall_of_fame.csv"
         self.winners_filename = "winners.csv"
@@ -29,7 +29,7 @@ class Evolutioner(ABC):
                 if gen_idx == 0:
                     configs = None
                 else:
-                    print("Sampling new configs")
+                    print("Sampling new configs from winners")
                     configs = self._sample_configs_from_winners(gen_idx-1) 
                 print("Generation: {} | Species: {}/{}".format(gen_idx, species_idx, self.num_species))
                 self._single_simulation(gen_idx=gen_idx, species_idx=species_idx, configs=configs)
