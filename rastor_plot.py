@@ -2,7 +2,7 @@ import pandas as pd
 import os
 import matplotlib.pyplot as plt
 from glob import glob
-from neuroevolutioner.genetics import TL_FitnessMeasurer
+from neuroevolutioner.Genetics import TL_FitnessMeasurer
 import numpy as np
 
 base_dir = "experiment_results/time_learning/generation_1"
@@ -26,8 +26,6 @@ def produce_stimuli_raster(firing, stimuli_dict):
         
 
 for idx in range(num_species):
-    if idx not in [90,906,863,748,93,144,1000,105,793,966,196,781,822,379,137,971,613,501,870,958,486,873,467,478,931,534,326,34,959]:
-        continue
     species_path = os.path.join(base_dir, "species_{}".format(idx))
     firing_data_path = os.path.join(species_path, "activity.csv")
     firing = pd.read_csv(firing_data_path)
@@ -61,7 +59,6 @@ for idx in range(num_species):
     fig, ax = plt.subplots()
     ax.eventplot(stimuli_np[:, 2:].T, alpha=0.1)
     ax.eventplot(firing_np.T, color = "r")
-    fig.suptitle("Fitness = %0.3f" % fitness_score)
-
+    fig.suptitle("Generation: %d | Species: %d | Fitness = %0.3f" % (1, idx , fitness_score))
     
     plt.show()
