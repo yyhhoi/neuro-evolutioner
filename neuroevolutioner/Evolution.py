@@ -85,7 +85,7 @@ class Evolutioner(ABC):
             else:
                 # Maintain the winners in previous generation in the current Hall of Fame
                 previous_winners_df = pd.read_csv(self.get_winners_path(gen_idx-1))
-                os.makedirs(self.get_HOF_path(gen_idx), exist_ok=True)
+                os.makedirs(os.path.basename(self.get_HOF_path(gen_idx))[0], exist_ok=True)
                 previous_winners_df.to_csv(self.get_HOF_path(gen_idx), index=False)
         else:
             pass
