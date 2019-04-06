@@ -8,7 +8,7 @@ TL_conditions_dict = {
     "rest1": 2,
     "test_S": 1,
     "test_ISI": 0.5,
-    "test_A":0.5,
+    "Test_A":0.5,
     "repeat": 1
     }
 TL_conditions_order = [
@@ -18,6 +18,5 @@ TL_conditions_order = [
     "rest1",
     "test_S",
     "test_ISI",
-    "test_A",
-    "repeat"
-    ]
+    "Test_A"
+]

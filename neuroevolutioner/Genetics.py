@@ -55,7 +55,7 @@ def mutation(chromosome, fraction = 0.2):
     prob_observed = uniform(0, 1, m)
     mutate_mask = prob_observed < prob_mutate
     new_chromosome[mutate_mask] = normal(new_chromosome[mutate_mask],
-                                         new_chromosome[mutate_mask]*fraction/prob_mutate[mutate_mask])
+                                         np.abs(new_chromosome[mutate_mask]*fraction/prob_mutate[mutate_mask]))
     return new_chromosome
 
 class ParamsInitialiser(ABC):
@@ -143,9 +143,8 @@ class TL_ParamsInitialiser(ParamsInitialiser):
         self.non_mutating_keys = ["num_neurons", "anatomy_matrix", "anatomy_labels", "SBA_labels"]
 
 class ConfigsConverter(ParamsInitialiser):
-    def __init__(self, configs):
+    def __init__(self):
         super(ConfigsConverter, self).__init__()
-        
 
 class TL_FitnessMeasurer():
     def __init__(self, activity):
@@ -168,7 +167,8 @@ class TL_FitnessMeasurer():
         if penalise is None:
             self.penalise = {
                 "train_ISI": [2, 11],
-                "test_ISI": [2, 11]
+                "test_ISI": [2, 11],
+                "rest1": [x+2 for x in range(10)]
             }
         else:
             self.penalise = penalise
@@ -178,15 +178,26 @@ class TL_FitnessMeasurer():
         for condition_label in self.encourage.keys():
             mask = (self.activity["condition"] == condition_label)
             firing_ocurrence = self.activity[mask].iloc[:, self.encourage[condition_label]]
-            while isinstance(firing_ocurrence , float) is False:
-                firing_ocurrence = firing_ocurrence.mean()
+            firing_ocurrence = firing_ocurrence.mean()
+            try:
+                firing_ocurrence = firing_ocurrence.sum()
+            except:
+                pass
+            # while isinstance(firing_ocurrence , float) is False:
+            #     firing_ocurrence = firing_ocurrence.mean()
             self.fitness_score += firing_ocurrence
 
         for condition_label in self.penalise.keys():
             mask = (self.activity["condition"] == condition_label)
-            firing_ocurrence = self.activity[mask].iloc[:, self.penalise[condition_label]] * -2
-            while isinstance(firing_ocurrence , float) is False:
-                firing_ocurrence = firing_ocurrence.mean()
+            firing_ocurrence = self.activity[mask].iloc[:, self.penalise[condition_label]] * -1
+            firing_ocurrence = firing_ocurrence.mean()
+            try:
+                firing_ocurrence = firing_ocurrence.sum()
+            except:
+                pass
+            
+            # while isinstance(firing_ocurrence , float) is False:
+            #     firing_ocurrence = firing_ocurrence.mean()
             self.fitness_score += firing_ocurrence
     
         return self.fitness_score
