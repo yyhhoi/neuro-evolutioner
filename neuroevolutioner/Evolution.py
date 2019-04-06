@@ -21,7 +21,7 @@ class Evolutioner(ABC):
         
 
     def proliferate_one_generation(self, gen_idx):
-
+        self._initialise_HOF(gen_idx)
         for species_idx in range(self.num_species):
             if os.path.isfile(os.path.join(self.get_species_dir(gen_idx, species_idx), self.gene_results_filename)) :    
                 print("Generation {} and species {} exist. Skipped".format(gen_idx, species_idx))
@@ -33,7 +33,7 @@ class Evolutioner(ABC):
                     configs = self._sample_configs_from_winners(gen_idx-1) 
                 print("Generation: {} | Species: {}/{}".format(gen_idx, species_idx, self.num_species))
                 self._single_simulation(gen_idx=gen_idx, species_idx=species_idx, configs=configs)
-        self.evaluate_one_generation(gen_idx) # Produce hall_of_frame in gen_dir
+        # self.evaluate_one_generation(gen_idx) # Produce hall_of_frame in gen_dir
         self.select_winners(gen_idx)
     def _single_simulation(self, gen_idx, species_idx, configs=None):
         
@@ -67,35 +67,58 @@ class Evolutioner(ABC):
         # Simulation starts
         self._loop_simulate(simenv, ensemble, exper, probe)
 
+        # Get fitness score and print
+        activity = pd.read_csv(self.get_activity_path(gen_idx, species_idx))
+        fitness_score = self._calc_fitness_score(activity)
+        self._write_to_HOF(gen_idx, species_idx, fitness_score)
+        print("Fitness: %0.4f"%(fitness_score))
+
         # Save genes
         probe.save_gene(configs)
 
-    def evaluate_one_generation(self, gen_idx):
-        
-        # Sample all species' dirs
-        all_species_dirs = sorted(glob(os.path.join(self.get_generation_dir(gen_idx), "*/")))
-        num_species = len(all_species_dirs)
-
-        # Write Record headers
-        if gen_idx == 0:
-            with open(self.get_HOF_path(gen_idx), "w") as fh:
-                fh.write("gen_idx,species_idx,score\n")
+    def _initialise_HOF(self, gen_idx):
+        HOF_path = self.get_HOF_path(gen_idx)
+        if os.path.isfile(HOF_path) is not True:
+            if gen_idx == 0:
+                with open(HOF_path, "w") as fh:
+                    fh.write("gen_idx,species_idx,score\n")
+            else:
+                # Maintain the winners in previous generation in the current Hall of Fame
+                previous_winners_df = pd.read_csv(self.get_winners_path(gen_idx-1))
+                previous_winners_df.to_csv(self.get_HOF_path(gen_idx), index=False)
         else:
-            # Maintain the winners in previous generation in the current Hall of Fame
-            previous_winners_df = pd.read_csv(self.get_winners_path(gen_idx-1))
-            previous_winners_df.to_csv(self.get_HOF_path(gen_idx), index=False)
+            pass
+
+    def _write_to_HOF(self, gen_idx, species_idx, fitness_score):
+        with open(self.get_HOF_path(gen_idx), "a") as fh_a:
+            fh_a.write("%d,%d,%0.4f\n" % (gen_idx, species_idx, fitness_score))
+
+    # def evaluate_one_generation(self, gen_idx):
         
-        # Loop through all species, calculate fitness and write to record.
-        for i in range(num_species):
-            generation_dir = os.path.join(self.proj_results_dir, "generation_{}".format(gen_idx))
-            activity_csv_path = os.path.join(generation_dir, "species_{}".format(i), "activity.csv")
-            activity = pd.read_csv(activity_csv_path)
+    #     # Sample all species' dirs
+    #     all_species_dirs = sorted(glob(os.path.join(self.get_generation_dir(gen_idx), "*/")))
+    #     num_species = len(all_species_dirs)
+
+    #     # Write Record headers
+    #     if gen_idx == 0:
+    #         with open(self.get_HOF_path(gen_idx), "w") as fh:
+    #             fh.write("gen_idx,species_idx,score\n")
+    #     else:
+    #         # Maintain the winners in previous generation in the current Hall of Fame
+    #         previous_winners_df = pd.read_csv(self.get_winners_path(gen_idx-1))
+    #         previous_winners_df.to_csv(self.get_HOF_path(gen_idx), index=False)
+        
+    #     # Loop through all species, calculate fitness and write to record.
+    #     for i in range(num_species):
+    #         generation_dir = os.path.join(self.proj_results_dir, "generation_{}".format(gen_idx))
+    #         activity_csv_path = os.path.join(generation_dir, "species_{}".format(i), "activity.csv")
+    #         activity = pd.read_csv(activity_csv_path)
             
-            # Evaluate the fitness score
-            fitness_score = self._calc_fitness_score(activity)
-            with open(self.get_HOF_path(gen_idx), "a") as fh_a:
-                fh_a.write("%d,%d,%0.4f\n" % (gen_idx, i, fitness_score))
-            print("Evaluated Gen:{} | Species: {}/{} | Score: {}".format(gen_idx, i, num_species, fitness_score))
+    #         # Evaluate the fitness score
+    #         fitness_score = self._calc_fitness_score(activity)
+    #         with open(self.get_HOF_path(gen_idx), "a") as fh_a:
+    #             fh_a.write("%d,%d,%0.4f\n" % (gen_idx, i, fitness_score))
+    #         print("Evaluated Gen:{} | Species: {}/{} | Score: {}".format(gen_idx, i, num_species, fitness_score))
         
     def select_winners(self, gen_idx, fraction=0.1):
         num_winners_to_select = int(self.num_species * fraction)
@@ -186,6 +209,10 @@ class Evolutioner(ABC):
         return os.path.join(self.proj_results_dir, "generation_{}".format(gen_idx), "species_{}".format(species_idx))
     def get_gene_results_path(self,gen_idx, species_idx):
         return os.path.join(self.proj_results_dir, "generation_{}".format(gen_idx), "species_{}".format(species_idx), self.gene_results_filename)
+
+    def get_activity_path(self, gen_idx, species_idx):
+        return os.path.join(self.proj_results_dir, "generation_{}".format(gen_idx), "species_{}".format(species_idx), self.activity_results_filename)
+
 
     def get_winners_path(self, gen_idx):
         return os.path.join(self.proj_results_dir, "generation_{}".format(gen_idx), self.winners_filename)
