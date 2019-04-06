@@ -108,14 +108,21 @@ class Evolutioner(ABC):
 
     def _get_winners_idx(self, gen_idx):
         winners_df = pd.read_csv(self.get_winners_path(gen_idx))
-        winners_idx_np = np.array(winners_df["species_idx"])
+        winners_idx_np = np.array(winners_df[["gen_idx", "species_idx"]])
+        
         return winners_idx_np
 
     def _sample_configs_from_winners(self, gen_idx):
-        winners_idx_np = self._get_winners_idx( gen_idx)
-        two_winners = np.random.choice(winners_idx_np, size = 2)
-        configs1 = load_pickle(self.get_gene_results_path(gen_idx, two_winners[0]))
-        configs2 = load_pickle(self.get_gene_results_path(gen_idx, two_winners[1]))
+        # Get winners and sample two from them
+        winners_idx_np = self._get_winners_idx( gen_idx) # ndarray with shape (num_winners, 2)
+        ran_vec = np.random.permutation(winners_idx_np.shape[0])
+        winner1, winner2 = winners_idx_np[ran_vec,:][0:2, :]
+
+        # Load the configs according to the winner's generaiton and species id
+        configs1 = load_pickle(self.get_gene_results_path(winner1[0], winner1[1]))
+        configs2 = load_pickle(self.get_gene_results_path(winner2[0], winner2[1]))
+
+        # Convert configs to chromosome, do crossover and mutation
         converter1, converter2 = ConfigsConverter(), ConfigsConverter()
         gene1, gene2 = converter1.configs2gene(configs1), converter1.configs2gene(configs2)
         chromosome1, chromosome2 = gene1["gene"]["chromosome"], gene2["gene"]["chromosome"]
