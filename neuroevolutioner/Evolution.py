@@ -77,8 +77,13 @@ class Evolutioner(ABC):
         num_species = len(all_species_dirs)
 
         # Write Record headers
-        with open(self.get_HOF_path(gen_idx), "w") as fh:
-            fh.write("species_idx,score\n")
+        if gen_idx == 0:
+            with open(self.get_HOF_path(gen_idx), "w") as fh:
+                fh.write("gen_idx,species_idx,score\n")
+        else:
+            # Maintain the winners in previous generation in the current Hall of Fame
+            previous_winners_df = pd.read_csv(self.get_winners_path(gen_idx-1))
+            previous_winners_df.to_csv(self.get_HOF_path(gen_idx), index=False)
         
         # Loop through all species, calculate fitness and write to record.
         for i in range(num_species):
@@ -89,7 +94,7 @@ class Evolutioner(ABC):
             # Evaluate the fitness score
             fitness_score = self._calc_fitness_score(activity)
             with open(self.get_HOF_path(gen_idx), "a") as fh_a:
-                fh_a.write("%d,%0.4f\n" % (i, fitness_score))
+                fh_a.write("%d,%d,%0.4f\n" % (gen_idx, i, fitness_score))
             print("Evaluated Gen:{} | Species: {}/{} | Score: {}".format(gen_idx, i, num_species, fitness_score))
         
     def select_winners(self, gen_idx, fraction=0.1):
