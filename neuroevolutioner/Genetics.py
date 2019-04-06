@@ -37,7 +37,7 @@ def crossover(chromosome1, chromosome2, p=0.5):
     new_chromosome2[ran_vec_more] = chromosome1[ran_vec_more]
     return new_chromosome1, new_chromosome2
 
-def mutation(chromosome, prob = 0.02):
+def mutation(chromosome, fraction = 0.2):
     """
     Each element in chromosome mutates with probability following a truncated (between 0 and 1) normal distribution ~ N(0, 0.2)
     When an element mutates, its new value is sampled from a normal distribution ~ N(old_value, old_value*fraction/probability_of_mutation).
@@ -49,13 +49,15 @@ def mutation(chromosome, prob = 0.02):
     Returns        
         new_chromosome: (1d-ndarray) New chromosome after mutation. Invalid values for the program could exist, but it is mutation :).
     """
+
     new_chromosome = chromosome.copy()
     m = chromosome.shape[0]
     prob_observed = uniform(0, 1, m)
-    prob_variance = uniform(0, 2, m)
-    mutate_mask = prob_observed < prob
+    prob_mutate = np.clip(normal(0, 0.1, m), 0, 1)
+    mutate_mask = prob_observed < prob_mutate
+    
     new_chromosome[mutate_mask] = normal(new_chromosome[mutate_mask],
-                                         np.abs(new_chromosome[mutate_mask]*prob_variance[mutate_mask])
+                                         np.abs(new_chromosome[mutate_mask]*fraction/prob_mutate[mutate_mask])
                                          )
     return new_chromosome
 
@@ -169,7 +171,7 @@ class TL_FitnessMeasurer():
             self.penalise = {
                 "train_ISI": [2, 11],
                 "test_ISI": [2, 11],
-                "rest1": [x+2 for x in range(10)]
+                "rest1": [2, 11]
             }
         else:
             self.penalise = penalise

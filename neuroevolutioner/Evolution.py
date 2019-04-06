@@ -15,7 +15,7 @@ class Evolutioner(ABC):
     def __init__(self, project_name, num_generations=10, num_species=1000, time_step = 0.005):
         self.project_name, self.num_gens, self.num_species = project_name, num_generations, num_species
         self.activity_results_filename, self.gene_results_filename, self.HOF_filename = "activity.csv", "gene.pickle", "hall_of_fame.csv"
-        self.winners_filename = "winners.csv"
+        self.winners_filename, self.finish_mark_filename = "winners.csv", "finished.txt"
         self.proj_results_dir = os.path.join("experiment_results", project_name)
         self.time_step = time_step
         
@@ -23,7 +23,7 @@ class Evolutioner(ABC):
     def proliferate_one_generation(self, gen_idx):
         self._initialise_HOF(gen_idx)
         for species_idx in range(self.num_species):
-            if os.path.isfile(os.path.join(self.get_species_dir(gen_idx, species_idx), self.gene_results_filename)) :    
+            if os.path.isfile(self.get_finished_mark_path(gen_idx, species_idx)) :    
                 print("Generation {} and species {} exist. Skipped".format(gen_idx, species_idx))
             else:
                 if gen_idx == 0:
@@ -63,6 +63,8 @@ class Evolutioner(ABC):
             activity_record_path = activity_record_path,
             gene_save_path = gene_save_path
         )
+        # Save genes
+        probe.save_gene(configs)
 
         # Simulation starts
         self._loop_simulate(simenv, ensemble, exper, probe)
@@ -73,11 +75,13 @@ class Evolutioner(ABC):
         self._write_to_HOF(gen_idx, species_idx, fitness_score)
         print("Fitness: %0.4f"%(fitness_score))
 
-        # Save genes
-        probe.save_gene(configs)
+        # Mark it as finsihed
+        with open(self.get_finished_mark_path(gen_idx, species_idx), "w") as fh:
+            fh.write("finished")
 
     def _initialise_HOF(self, gen_idx):
         HOF_path = self.get_HOF_path(gen_idx)
+        os.makedirs(os.path.split(self.get_HOF_path(gen_idx))[0], exist_ok=True)
         if os.path.isfile(HOF_path) is not True:
             if gen_idx == 0:
                 with open(HOF_path, "w") as fh:
@@ -85,7 +89,6 @@ class Evolutioner(ABC):
             else:
                 # Maintain the winners in previous generation in the current Hall of Fame
                 previous_winners_df = pd.read_csv(self.get_winners_path(gen_idx-1))
-                os.makedirs(os.path.basename(self.get_HOF_path(gen_idx))[0], exist_ok=True)
                 previous_winners_df.to_csv(self.get_HOF_path(gen_idx), index=False)
         else:
             pass
@@ -212,7 +215,8 @@ class Evolutioner(ABC):
     def get_activity_path(self, gen_idx, species_idx):
         return os.path.join(self.proj_results_dir, "generation_{}".format(gen_idx), "species_{}".format(species_idx), self.activity_results_filename)
 
-
+    def get_finished_mark_path(self, gen_idx, species_idx):
+        return os.path.join(self.proj_results_dir, "generation_{}".format(gen_idx), "species_{}".format(species_idx), self.finish_mark_filename)
     def get_winners_path(self, gen_idx):
         return os.path.join(self.proj_results_dir, "generation_{}".format(gen_idx), self.winners_filename)
     def get_HOF_path(self, gen_idx):

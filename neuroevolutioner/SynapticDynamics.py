@@ -6,7 +6,7 @@ class FiringMask():
         self.firing_mask = np.zeros(num_neurons)
     def update_mask(self, u, u_threshold):
         self.firing_mask =  u >  u_threshold # firing mask ~ (num_fired, )
-    
+
     def get_mask(self):
         return self.firing_mask
     def get_2d_rows(self): # Expanded to multiple rows
