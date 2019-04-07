@@ -5,7 +5,7 @@ from glob import glob
 from neuroevolutioner.Genetics import TL_FitnessMeasurer
 import numpy as np
 
-base_dir = "experiment_results/time_learning/generation_1"
+base_dir = "experiment_results/time_learning/generation_0"
 all_species_paths = glob(os.path.join(base_dir, "*"))
 num_species = len(all_species_paths)
 stimuli_dict = {

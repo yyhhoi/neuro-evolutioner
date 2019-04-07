@@ -163,47 +163,33 @@ class TL_FitnessMeasurer():
         self.tl_accu_times = TL_conditions_accu_dict
         self.fitness_score = None
         self.time_step = time_step
-        self.absolute_pattern, self.conv_kernal, self.abs_constant = self._gen_fitness_filter()
+
     def calc_fitness(self):
         
         activity_np_related = np.array(self.activity_related)
 
-        absolute_socre = (self.absolute_pattern * activity_np_related).sum()/self.abs_constant
-        convolved_output = convolve2d(activity_np_related, self.conv_kernal, mode="valid")
-        conv_score = np.sum(convolved_output > 0)/convolved_output.squeeze().shape[0]
-        fitness_score = absolute_socre + conv_score*2
-        return fitness_score
+        train_S_period1 = activity_np_related[0:int(self.tl_accu_times["train_S"]/self.time_step), 0]
+        train_S_period2 = activity_np_related[int(self.tl_accu_times["rest1"]/self.time_step):int(self.tl_accu_times["test_S"]/self.time_step), 0]
+        train_S_plus = np.mean(np.append(train_S_period1, train_S_period2))
 
+        train_S_non_period1 = activity_np_related[int(self.tl_accu_times["train_S"]/self.time_step):int(self.tl_accu_times["rest1"]/self.time_step), 0]
+        train_S_non_period2 = activity_np_related[int(self.tl_accu_times["test_S"]/self.time_step):, 0]
+        train_S_minus = np.mean(np.append(train_S_non_period1, train_S_non_period2)) * -1
 
-    def _gen_fitness_filter(self):
-        time_step = self.time_step
-        tl_accu_times = self.tl_accu_times
-        absolute_pattern = np.zeros(self.activity_related.shape)
+        train_A_period1 = activity_np_related[int(self.tl_accu_times["train_ISI"]/self.time_step):int(self.tl_accu_times["train_A"]/self.time_step), 9]
+        train_A_period2 = activity_np_related[int(self.tl_accu_times["test_ISI"]/self.time_step):int(self.tl_accu_times["Test_A"]/self.time_step), 9]
+        train_A_plus = np.mean(np.append(train_A_period1, train_A_period2))
 
-        # normalised to 1s, if all matched, = 1 mark
-        # # Train
-        absolute_pattern[0:int(tl_accu_times["train_S"]/time_step), 0] = 1 # Train_S
-        overlap_start = (tl_accu_times["train_A"] + tl_accu_times["train_ISI"])/2
-        absolute_pattern[int(overlap_start/time_step):int(tl_accu_times["train_A"]/time_step), 9 ] = 1/0.25 # Train_A
-        # # Test
-        absolute_pattern[int(tl_accu_times["rest1"]/time_step):int(tl_accu_times["test_S"]/time_step), 0] = 1 # test_S
-        overlap_start = (tl_accu_times["Test_A"] + tl_accu_times["test_ISI"])/2
-        absolute_pattern[int(overlap_start/time_step):int(tl_accu_times["Test_A"]/time_step), 9] = 1/0.25 # test_A
-        # # Normalisation constant
-        absolute_normalisation = np.sum(absolute_pattern[absolute_pattern > 0])
+        train_A_non_period1 = activity_np_related[0:int(self.tl_accu_times["train_ISI"]/self.time_step), 9]
+        train_A_non_period2 = activity_np_related[int(self.tl_accu_times["train_A"]/self.time_step):int(self.tl_accu_times["test_ISI"]/self.time_step), 9]
+        train_A_minus = np.mean(np.append(train_A_non_period1, train_A_non_period2)) * -1
 
-        # Punish other patterns in convolution
-        # # Sensory and action neurons
-        convolution_kernal = np.ones((int(tl_accu_times["train_A"]/time_step), 10))*-1
-        convolution_kernal[int((tl_accu_times["train_S"]/4)/time_step):int(tl_accu_times["train_S"]/time_step), 0] = 1
-        overlap_start = (tl_accu_times["train_ISI"] + tl_accu_times["train_A"])/2
-        convolution_kernal[int(overlap_start/time_step):int(tl_accu_times["train_A"]/time_step), 9] = 1
-        # # Brain neurons
-        for i in range(0, 8): # Excluding index of 0, 9 which were already handled
-            overlap_level = i + 1 # set higher for higher tolerance of different slope
-            convolution_kernal[int((0.5 + i/7)/time_step):int((0.75 + overlap_level/7)/time_step) , i+1] = 1
-        
-        return absolute_pattern, convolution_kernal, absolute_normalisation
+        rest_non_period = activity_np_related[int(self.tl_accu_times["train_A"]/self.time_step):int(self.tl_accu_times["rest1"]/self.time_step), 1:9]
+        rest_minus = np.mean(rest_non_period)*2
+
+        score = train_S_plus + train_S_minus + train_A_plus + train_A_minus + rest_minus
+        return score
+
 
 
 
