@@ -101,12 +101,12 @@ class WeightsDynamics():
         dw_dt_LTD = -self.B * self.z_LTD.get_2d_rows() * firing_mask_2d_cols
         dw_dt_hetero = -self.beta * (self.w - self.w_snake) * np.power(self.z_LTD.get_2d_rows_previous(), 3) * firing_mask_2d_rows
         dw_dt_transmitter = self.transmitter_constants * firing_mask_2d_cols
-        dw_dt_excitatory = self.types * (dw_dt_LTP + dw_dt_LTD + dw_dt_hetero + dw_dt_transmitter)
+        dw_dt_excitatory = (self.types > 0.5) * (dw_dt_LTP + dw_dt_LTD + dw_dt_hetero + dw_dt_transmitter)
 
         # Inhibitory synaptic dynamics
         trace_term = (self.z_LTP.get_2d_rows() + 1) * firing_mask_2d_cols + self.z_LTP.get_2d_cols() * firing_mask_2d_rows
         dynamics_term = self.eta * (self.H - self.gamma)
-        dw_dt_inhibitory = (1 - self.types) * dynamics_term * trace_term
+        dw_dt_inhibitory = (self.types < 0.5) * dynamics_term * trace_term
 
         # Update weights with anatomical constriants and hard bound
         self.w += (dw_dt_excitatory + dw_dt_inhibitory) * self.time_step
