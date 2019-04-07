@@ -1,9 +1,11 @@
 from .genetics_templates.basic_connectivity import BC_get_params_dict
 from .genetics_templates.time_learning import TL_get_params_dict
+from .experiment_configs.TL import TL_conditions_accu_dict
 from numpy.random import uniform, normal
 import numpy as np
 import pandas as pd
 from abc import ABC, abstractmethod
+from scipy.signal import convolve2d
 def log10uniform(low, high, size):
     return np.power(10, uniform(np.log10(low), np.log10(high), size = size))
 
@@ -150,60 +152,58 @@ class ConfigsConverter(ParamsInitialiser):
         super(ConfigsConverter, self).__init__()
 
 class TL_FitnessMeasurer():
-    def __init__(self, activity):
+    def __init__(self, activity, time_step):
         """
+
         Args:
-            activity: Pandas dataframe with shape (times, num_neurons)
+            activity: Pandas dataframe with shape (times, num_neurons+2)
+
         """
-        self.activity = activity
+        self.activity_related = activity.iloc[:, 2:]
+        self.tl_accu_times = TL_conditions_accu_dict
         self.fitness_score = None
-    def build_score_criteria(self, encourage=None, penalise=None):
-        if encourage is None:
-            self.encourage = {
-                "train_S": [2],
-                "train_A": [11],
-                "test_S": [2],
-                "Test_A":[11],
-            }
-        else:
-            self.encourage = encourage
-        if penalise is None:
-            self.penalise = {
-                "train_ISI": [2, 11],
-                "test_ISI": [2, 11],
-                "rest1": [2, 11]
-            }
-        else:
-            self.penalise = penalise
-
+        self.time_step = time_step
+        self.absolute_pattern, self.conv_kernal, self.abs_constant = self._gen_fitness_filter()
     def calc_fitness(self):
-        self.fitness_score = 0
-        for condition_label in self.encourage.keys():
-            mask = (self.activity["condition"] == condition_label)
-            firing_ocurrence = self.activity[mask].iloc[:, self.encourage[condition_label]]
-            firing_ocurrence = firing_ocurrence.mean()
-            try:
-                firing_ocurrence = firing_ocurrence.sum()
-            except:
-                pass
-            # while isinstance(firing_ocurrence , float) is False:
-            #     firing_ocurrence = firing_ocurrence.mean()
-            self.fitness_score += firing_ocurrence
+        
+        activity_np_related = np.array(self.activity_related)
 
-        for condition_label in self.penalise.keys():
-            mask = (self.activity["condition"] == condition_label)
-            firing_ocurrence = self.activity[mask].iloc[:, self.penalise[condition_label]] * -1
-            firing_ocurrence = firing_ocurrence.mean()
-            try:
-                firing_ocurrence = firing_ocurrence.sum()
-            except:
-                pass
-            
-            # while isinstance(firing_ocurrence , float) is False:
-            #     firing_ocurrence = firing_ocurrence.mean()
-            self.fitness_score += firing_ocurrence
-    
-        return self.fitness_score
+        absolute_socre = (self.absolute_pattern * activity_np_related).sum()/self.abs_constant
+        convolved_output = convolve2d(activity_np_related, self.conv_kernal, mode="valid")
+        conv_score = np.max(convolved_output/convolved_output.shape[0])
+        fitness_score = absolute_socre + conv_score*2
+        return fitness_score
+
+
+    def _gen_fitness_filter(self):
+        time_step = self.time_step
+        tl_accu_times = self.tl_accu_times
+        absolute_pattern = np.zeros(self.activity_related.shape)
+
+        # normalised to 1s, if all matched, = 1 mark
+        # # Train
+        absolute_pattern[0:int(tl_accu_times["train_S"]/time_step), 0] = 1 # Train_S
+        overlap_start = (tl_accu_times["train_A"] + tl_accu_times["train_ISI"])/2
+        absolute_pattern[int(overlap_start/time_step):int(tl_accu_times["train_A"]/time_step), 9 ] = 1/0.25 # Train_A
+        # # Test
+        absolute_pattern[int(tl_accu_times["rest1"]/time_step):int(tl_accu_times["test_S"]/time_step), 0] = 1 # test_S
+        overlap_start = (tl_accu_times["Test_A"] + tl_accu_times["test_ISI"])/2
+        absolute_pattern[int(overlap_start/time_step):int(tl_accu_times["Test_A"]/time_step), 9] = 1/0.25 # test_A
+        # # Normalisation constant
+        absolute_normalisation = np.sum(absolute_pattern[absolute_pattern > 0])
+
+        # Punish other patterns in convolution
+        # # Sensory and action neurons
+        convolution_kernal = np.ones((int(tl_accu_times["train_A"]/time_step), 10))*-1
+        convolution_kernal[int((tl_accu_times["train_S"]/4)/time_step):int(tl_accu_times["train_S"]/time_step), 0] = 1
+        overlap_start = (tl_accu_times["train_ISI"] + tl_accu_times["train_A"])/2
+        convolution_kernal[int(overlap_start/time_step):int(tl_accu_times["train_A"]/time_step), 9] = 1
+        # # Brain neurons
+        for i in range(0, 8): # Excluding index of 0, 9 which were already handled
+            idx = i + 1
+            convolution_kernal[int((0.5 + i/7)/time_step):int((0.75 + idx/7)/time_step) , idx] = 1
+        
+        return absolute_pattern, convolution_kernal, absolute_normalisation
 
 
 

@@ -18,6 +18,7 @@ class Evolutioner(ABC):
         self.winners_filename, self.finish_mark_filename = "winners.csv", "finished.txt"
         self.proj_results_dir = os.path.join("experiment_results", project_name)
         self.time_step = time_step
+        self.measurer = None
         
 
     def proliferate_one_generation(self, gen_idx):
@@ -116,7 +117,6 @@ class Evolutioner(ABC):
         for i in range(num_species):
 
             activity = pd.read_csv(self.get_activity_path(gen_idx, i))
-
             # Evaluate the fitness score
             fitness_score = self._calc_fitness_score(activity)
             self._write_to_HOF( gen_idx, i, fitness_score)
@@ -170,6 +170,7 @@ class Evolutioner(ABC):
         # params_initialiser = TL_ParamsInitialiser()
         # configs = params_initialiser.sample_new_configs()
         return None
+
     @abstractmethod
     def _calc_fitness_score(self, activity):
         # measurer = TL_FitnessMeasurer(activity)
@@ -230,9 +231,8 @@ class TL_Evolutioner(Evolutioner):
         configs = params_initialiser.sample_new_configs()
         return configs
     def _calc_fitness_score(self, activity):
-        measurer = TL_FitnessMeasurer(activity)
-        measurer.build_score_criteria()
-        fitness_score = measurer.calc_fitness()
+        self.measurer = TL_FitnessMeasurer(activity, self.time_step)
+        fitness_score = self.measurer.calc_fitness()
         return fitness_score
     def _initialise_experimenter(self, num_neurons, anatomy_labels):
         exper = TL_Experimenter(num_neurons, anatomy_labels)

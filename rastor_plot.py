@@ -29,7 +29,7 @@ for idx in range(num_species):
     species_path = os.path.join(base_dir, "species_{}".format(idx))
     firing_data_path = os.path.join(species_path, "activity.csv")
     firing = pd.read_csv(firing_data_path)
-
+    
     # Calc fitness
     fitnesser = TL_FitnessMeasurer(firing)
     fitnesser.build_score_criteria()
