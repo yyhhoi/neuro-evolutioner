@@ -170,7 +170,7 @@ class TL_FitnessMeasurer():
 
         absolute_socre = (self.absolute_pattern * activity_np_related).sum()/self.abs_constant
         convolved_output = convolve2d(activity_np_related, self.conv_kernal, mode="valid")
-        conv_score = np.sum(convolved_output[convolved_output > 0])/convolved_output.squeeze().shape[0]
+        conv_score = np.sum(convolved_output > 0)/convolved_output.squeeze().shape[0]
         fitness_score = absolute_socre + conv_score*2
         return fitness_score
 
@@ -200,7 +200,7 @@ class TL_FitnessMeasurer():
         convolution_kernal[int(overlap_start/time_step):int(tl_accu_times["train_A"]/time_step), 9] = 1
         # # Brain neurons
         for i in range(0, 8): # Excluding index of 0, 9 which were already handled
-            overlap_level = i + 3 # set higher for higher tolerance of different slope
+            overlap_level = i + 1 # set higher for higher tolerance of different slope
             convolution_kernal[int((0.5 + i/7)/time_step):int((0.75 + overlap_level/7)/time_step) , i+1] = 1
         
         return absolute_pattern, convolution_kernal, absolute_normalisation

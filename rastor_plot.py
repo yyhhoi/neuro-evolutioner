@@ -5,7 +5,7 @@ from glob import glob
 from neuroevolutioner.Genetics import TL_FitnessMeasurer
 import numpy as np
 
-base_dir = "experiment_results/time_learning/generation_0"
+base_dir = "experiment_results/time_learning/generation_1"
 all_species_paths = glob(os.path.join(base_dir, "*"))
 num_species = len(all_species_paths)
 stimuli_dict = {
@@ -31,8 +31,7 @@ for idx in range(num_species):
     firing = pd.read_csv(firing_data_path)
     
     # Calc fitness
-    fitnesser = TL_FitnessMeasurer(firing)
-    fitnesser.build_score_criteria()
+    fitnesser = TL_FitnessMeasurer(firing, 0.0005)
     fitness_score = fitnesser.calc_fitness()
     
     # Convert the numpy

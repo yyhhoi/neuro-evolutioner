@@ -125,7 +125,8 @@ print(activity1.shape)
 print(convolution_kernal.shape)
 
 def fitness(arr):
-    score = np.sum(arr[arr > 0])/arr.squeeze().shape[0]
+    arr[arr<0] = 0
+    score = np.mean(arr)/arr.squeeze().shape[0]
     return score
 
 fig3, ax3 = plt.subplots(2,2, figsize=(8,12))
