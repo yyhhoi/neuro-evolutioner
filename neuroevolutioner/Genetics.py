@@ -170,7 +170,7 @@ class TL_FitnessMeasurer():
 
         train_S_period1 = activity_np_related[0:int(self.tl_accu_times["train_S"]/self.time_step), 0]
         train_S_period2 = activity_np_related[int(self.tl_accu_times["rest1"]/self.time_step):int(self.tl_accu_times["test_S"]/self.time_step), 0]
-        train_S_plus = self._sqrtCov_function(train_S_period1, train_S_period2)
+        train_S_plus = self._jump_function(self._sqrtCov_function(train_S_period1, train_S_period2), 0.2, 1)
 
         train_S_non_period1 = activity_np_related[int(self.tl_accu_times["train_S"]/self.time_step):int(self.tl_accu_times["rest1"]/self.time_step), 0]
         train_S_non_period2 = activity_np_related[int(self.tl_accu_times["test_S"]/self.time_step):, 0]
@@ -178,7 +178,7 @@ class TL_FitnessMeasurer():
 
         train_A_period1 = activity_np_related[int(self.tl_accu_times["train_ISI"]/self.time_step):int(self.tl_accu_times["train_A"]/self.time_step), 9]
         train_A_period2 = activity_np_related[int(self.tl_accu_times["test_ISI"]/self.time_step):int(self.tl_accu_times["Test_A"]/self.time_step), 9]
-        train_A_plus = self._sqrtCov_function(train_A_period1,train_A_period2)
+        train_A_plus = self._jump_function(self._sqrtCov_function(train_A_period1,train_A_period2), 0.2, 1)
 
         train_A_non_period1 = activity_np_related[0:int(self.tl_accu_times["train_ISI"]/self.time_step), 9]
         train_A_non_period2 = activity_np_related[int(self.tl_accu_times["train_A"]/self.time_step):int(self.tl_accu_times["test_ISI"]/self.time_step), 9]
@@ -200,7 +200,12 @@ class TL_FitnessMeasurer():
         else:
             output = np.sqrt(cov_mean)
         return output
-
+    @staticmethod
+    def _jump_function(val, val_threshold, jump_target):
+        if val > val_threshold:
+            return jump_target
+        else:
+            return val
 
 
 

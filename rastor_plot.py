@@ -5,7 +5,7 @@ from glob import glob
 from neuroevolutioner.Genetics import TL_FitnessMeasurer
 import numpy as np
 import pdb
-gen_idx = 19
+gen_idx = 13
 
 base_dir = "experiment_results/time_learning/generation_{}".format(gen_idx)
 HOF_path = os.path.join(base_dir, "hall_of_fame.csv")
@@ -30,6 +30,8 @@ def produce_stimuli_raster(firing, stimuli_dict):
         
 
 for idx in range(HOF_df.shape[0]):
+    if HOF_df.iloc[idx, 0] != gen_idx:
+        continue
     print(HOF_df.iloc[idx,:])
     species_idx = HOF_df.iloc[idx, 1]
     # fitness_calc = HOF_df[idx]["score"]
@@ -37,7 +39,10 @@ for idx in range(HOF_df.shape[0]):
 
     species_path = os.path.join(base_dir, "species_{}".format(species_idx))
     firing_data_path = os.path.join(species_path, "activity.csv")
-    firing = pd.read_csv(firing_data_path)
+    try:
+        firing = pd.read_csv(firing_data_path)
+    except FileNotFoundError:
+        continue
     
     # Calc fitness
     fitnesser = TL_FitnessMeasurer(firing, 0.0005)
