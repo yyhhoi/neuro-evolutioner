@@ -185,9 +185,9 @@ class TL_FitnessMeasurer():
         train_A_minus = np.mean(np.append(train_A_non_period1, train_A_non_period2)) * -1
 
         rest_non_period = activity_np_related[int(self.tl_accu_times["train_A"]/self.time_step):int(self.tl_accu_times["rest1"]/self.time_step), 1:9] * -1
-        rest_minus = np.mean(rest_non_period)*2
+        rest_minus = np.mean(rest_non_period)
 
-        score = train_S_plus + train_S_minus + train_A_plus + train_A_minus + rest_minus
+        score = train_S_plus + train_S_minus + train_A_plus + train_A_minus + rest_minus *2
         return score
     
     @staticmethod
