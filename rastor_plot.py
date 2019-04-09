@@ -4,10 +4,14 @@ import matplotlib.pyplot as plt
 from glob import glob
 from neuroevolutioner.Genetics import TL_FitnessMeasurer
 import numpy as np
+import pdb
+gen_idx = 19
 
-base_dir = "experiment_results/time_learning/generation_0"
-all_species_paths = glob(os.path.join(base_dir, "*"))
-num_species = len(all_species_paths)
+base_dir = "experiment_results/time_learning/generation_{}".format(gen_idx)
+HOF_path = os.path.join(base_dir, "hall_of_fame.csv")
+HOF_df = pd.read_csv(HOF_path)
+HOF_df = HOF_df.sort_values(by="score", ascending=False)
+
 stimuli_dict = {
     "train_S": [2],
     "train_A": [11],
@@ -25,8 +29,13 @@ def produce_stimuli_raster(firing, stimuli_dict):
     return stimuli_np
         
 
-for idx in range(num_species):
-    species_path = os.path.join(base_dir, "species_{}".format(idx))
+for idx in range(HOF_df.shape[0]):
+    print(HOF_df.iloc[idx,:])
+    species_idx = HOF_df.iloc[idx, 1]
+    # fitness_calc = HOF_df[idx]["score"]
+    
+
+    species_path = os.path.join(base_dir, "species_{}".format(species_idx))
     firing_data_path = os.path.join(species_path, "activity.csv")
     firing = pd.read_csv(firing_data_path)
     
@@ -51,13 +60,9 @@ for idx in range(num_species):
     ran_vec = np.random.choice(stimuli_np.shape[0], size = (200,))
     stimuli_np = stimuli_np[ran_vec, :]
 
-    # if firing_np.shape[0] > 500:
-    #     np.random.seed(90)
-    #     ran_vec = np.random.choice(firing_np.shape[0], size = (500,))
-    #     firing_np = firing_np[ran_vec, :]
     fig, ax = plt.subplots()
     ax.eventplot(stimuli_np[:, 2:].T, alpha=0.1)
     ax.eventplot(firing_np.T, color = "r")
-    fig.suptitle("Generation: %d | Species: %d | Fitness = %0.3f" % (1, idx , fitness_score))
+    fig.suptitle("Generation: %d | Species: %d | Fitness = %0.3f" % (gen_idx, species_idx , fitness_score))
     
     plt.show()
