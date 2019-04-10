@@ -2,20 +2,18 @@ import pandas as pd
 import os
 import matplotlib.pyplot as plt
 from glob import glob
-from neuroevolutioner.Genetics import TL_FitnessMeasurer
+from neuroevolutioner.Genetics import DA_FitnessMeasurer
 import numpy as np
 import pdb
 gen_idx = 0
-
-base_dir = "experiment_results/time_learning/generation_{}".format(gen_idx)
+time_step = 0.0001
+base_dir = "experiment_results/delayed_activation/generation_{}".format(gen_idx)
 HOF_path = os.path.join(base_dir, "hall_of_fame.csv")
 HOF_df = pd.read_csv(HOF_path)
 HOF_df = HOF_df.sort_values(by="score", ascending=False)
 
 stimuli_dict = {
-    "train_S": [2],
-    "train_A": [11],
-    "test_S": [2]
+    "S": [2]
 }
 
 def produce_stimuli_raster(firing, stimuli_dict):
@@ -45,7 +43,7 @@ for idx in range(HOF_df.shape[0]):
         continue
     
     # Calc fitness
-    fitnesser = TL_FitnessMeasurer(firing, 0.0005)
+    fitnesser = DA_FitnessMeasurer(firing, time_step)
     fitness_score = fitnesser.calc_fitness()
     
     # Convert the numpy

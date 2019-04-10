@@ -238,7 +238,7 @@ class DA_FitnessMeasurer(TL_FitnessMeasurer):
         A_least_score = self._jump_function(least_A, 10, 1)
         # Delay score = (time of first onset of A firing) - (time of first onset of B firing)
         delay_score = 0
-        if least_A > 0:
+        if (least_A > 0) and (least_B > 0):
             A_fire_time = np.min(np.where(A_activities > 0)[0]) * self.time_step
             B_fire_time = np.min(np.where(B_activities > 0)[0]) * self.time_step
             delay_score = (A_fire_time - B_fire_time) * 2
