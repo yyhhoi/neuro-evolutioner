@@ -51,3 +51,14 @@ def create_types_SMC(num_neurons, anatomy_labels):
     types_matrix[0:anatomy_labels['sensory'], anatomy_labels['sensory']:anatomy_labels['brain']:] = 1
 
     return types_matrix
+
+def create_types_DA(num_neurons, anatomy_labels):
+    types_matrix = np.random.uniform(0,1, (num_neurons, num_neurons))    
+    # Generate different proportions of exite/inhib
+    excite_inhib_sep =np.random.uniform(0.2,0.6) 
+    types_matrix[types_matrix >= excite_inhib_sep] = 1
+    types_matrix[types_matrix < excite_inhib_sep] = 0
+    return types_matrix
+
+if __name__ == "__main__":
+    pass

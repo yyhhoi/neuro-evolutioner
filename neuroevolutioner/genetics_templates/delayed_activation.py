@@ -1,32 +1,23 @@
 import numpy as np
-from .template_creation_utils.utils import create_anatomy, create_types_TL
+from .template_creation_utils.utils import create_anatomy, create_types_DA
 
 
-# Intended Paradigms:
-# 1. Sensory connects to Brain (Sensory fires, then Brain fires)
-# 2. Brain connects to Action (Brain fires, then Action fires)
-# 3. Action does not connects the Sensory (Action fires, then Sensory does not fire. True in reverse direction)
+# Goals:
+# 1. Sensory fires
+# 2. Firing activities reverberate in Bain
+# 3. Only after a while, the Action fires,
+# such that activation of Action is delayed simply by network activity reverberation
 
-# If achieved, the next goal will be:
-# Inherit the parameters from basic_connectivity(BC) experiment, show that the low connectivity holds in a large proportion of species under mutation methods
-# Based on the low connectvity, show that Sensory-Action connection can be learnt through the associative region of the brain
-# Precisely, the paradigm could be: 
-#   1. Stimulate Sensory and Action together (training)
-#   2. After training, when either Sensory or Action is stimulated, the another will fire (connection is grown by training)
 
-# Define anatomy
-# 0 for connection possible, 1 for no connection
 ana_partition_matrix = np.array([
-    [0, 1, 0, 0],
-    [0, 1, 1, 0],
-    [0, 0, 1, 1],
-    [1, 1, 1, 0]
+    [0, 1, 0],
+    [0, 1, 1],
+    [0, 0, 0]
 ])
 
 anatomy_matrix, anatomy_labels, num_neurons  = create_anatomy(ana_partition_matrix,     
                                                             sensory1 = 1,
-                                                            brain1 = 4, 
-                                                            brain2 = 4,
+                                                            brain = 8,
                                                             action1 = 1)
 # Dummy matrix. No use
 SBA_partition_matrix = np.ones((num_neurons, num_neurons))
@@ -90,13 +81,14 @@ params_dict = {
 
 # Initialisation and gene's distribution inheritance should be separated
 
-def TL_get_params_dict():
-    params_dict["types_matrix"] = create_types_TL(num_neurons, anatomy_labels)
+def DA_get_params_dict():
+    params_dict["types_matrix"] = create_types_DA(num_neurons, anatomy_labels)
     return params_dict
 
 if __name__ == "__main__":
-    import matplotlib.pyplot as plt
-    
-    # print(np.sum(types_matrix))
-    # plt.imshow(types_matrix)
-    # plt.show()
+    pass
+    # for i in range(10):
+    #     # pa = create_types_DA(num_neurons, anatomy_labels)
+    #     # print(pa)
+    #     pa = DA_get_params_dict()
+    #     print(pa["types_matrix"])
