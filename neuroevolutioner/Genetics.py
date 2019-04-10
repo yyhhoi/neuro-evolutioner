@@ -227,15 +227,15 @@ class DA_FitnessMeasurer(TL_FitnessMeasurer):
         activity_np_related = np.array(self.activity_related)
         # S must have at least 1% of firing activity in the period of S
         least_S = np.mean(activity_np_related[0:int(self.accu_times["S"]/self.time_step), 0:self.anatomy_labels["sensory1"]])
-        S_least_score = self._jump_function(least_S, 0.1, 1, 0)
-        # B must have at least > 10 firing event over entire period
+        S_least_score = self._jump_function(least_S, 0.01, 1, 0)
+        # B must have at least > 2 firing event over entire period
         B_activities = activity_np_related[:, self.anatomy_labels["sensory1"]:self.anatomy_labels["brain"]]
         least_B = np.sum(B_activities)
-        B_least_score = self._jump_function(least_B, 10,  1, 0)
-        # A must have at least > 10 firing event
+        B_least_score = self._jump_function(least_B, 2,  1, 0)
+        # A must have at least > 2 firing event
         A_activities = activity_np_related[:, self.anatomy_labels["brain"]:self.anatomy_labels["action1"]]
         least_A = np.sum(A_activities)
-        A_least_score = self._jump_function(least_A, 10, 1, 0)
+        A_least_score = self._jump_function(least_A, 2, 1, 0)
         # Delay score = (time of first onset of A firing) - (time of first onset of B firing)
         delay_score = 0
         if (least_A > 0) and (least_B > 0):
