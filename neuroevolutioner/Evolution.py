@@ -69,7 +69,7 @@ class Evolutioner(ABC):
         probe.save_gene(configs)
 
         # Simulation starts
-        self._loop_simulate(simenv, ensemble, exper, probe)
+        self._loop_simulate(simenv, ensemble, exper, probe, self.I_ext_multiplier)
 
         # Get fitness score and print
         activity = pd.read_csv(self.get_activity_path(gen_idx, species_idx))
@@ -185,7 +185,7 @@ class Evolutioner(ABC):
 
 
     @staticmethod
-    def _loop_simulate(simenv, ensemble, exper, probe):
+    def _loop_simulate(simenv, ensemble, exper, probe, I_ext_multiplier):
         # Simulation starts
         while simenv.sim_stop == False:
             time  = simenv.getTime()
@@ -196,7 +196,7 @@ class Evolutioner(ABC):
             _, condition, label,  I_ext = exper.get_stimulation_info(time)
 
             # Apply current and update the dynamics
-            ensemble.I_ext = I_ext * self.I_ext_multiplier
+            ensemble.I_ext = I_ext * I_ext_multiplier
             ensemble.state_update()
 
             # Increment simulation environment
