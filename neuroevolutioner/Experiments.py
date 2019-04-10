@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from .experiment_configs.TL import TL_conditions_dict, TL_conditions_order
-
+from .experiment_configs.DA import DA_conditions_dict, DA_conditions_order
 import numpy as np
 
 class Experimenter(ABC):
@@ -76,4 +76,25 @@ class TL_Experimenter(Experimenter):
                 self._appending(times_list, conditions_list, TL_conditions_dict, condition_key, 0)
             else:
                 self._appending(times_list, conditions_list, TL_conditions_dict, condition_key, times_list[-1])
+        return times_list, conditions_list, conditions_dict
+
+class DA_Experimenter(Experimenter):
+    def __init__(self, num_neurons, anatomy_labels):
+        super(DA_Experimenter, self).__init__(num_neurons, anatomy_labels)
+    
+    def _update_I_ext_stimuli(self, condition):
+        stimulus = np.zeros(self.num_neurons)
+        if (condition == "S"):
+            stimulus[0:self.anatomy_labels["sensory1"]] = 1
+        self.I_ext = stimulus
+    def _update_label(self, condition):
+        self.label = np.nan
+    def _gen_condition_time_list(self):
+        times_list, conditions_list = [], []
+        conditions_dict = DA_conditions_dict
+        for idx, condition_key in enumerate(DA_conditions_order):
+            if idx == 0:
+                self._appending(times_list, conditions_list, DA_conditions_dict, condition_key, 0)
+            else:
+                self._appending(times_list, conditions_list, DA_conditions_dict, condition_key, times_list[-1])
         return times_list, conditions_list, conditions_dict

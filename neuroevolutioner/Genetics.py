@@ -1,6 +1,8 @@
 from .genetics_templates.basic_connectivity import BC_get_params_dict
 from .genetics_templates.time_learning import TL_get_params_dict
+from .genetics_templates.delayed_activation import DA_get_params_dict
 from .experiment_configs.TL import TL_conditions_accu_dict
+from .experiment_configs.DA import DA_conditions_accu_dict
 from numpy.random import uniform, normal
 import numpy as np
 import pandas as pd
@@ -147,6 +149,13 @@ class TL_ParamsInitialiser(ParamsInitialiser):
         self.params_dict = TL_get_params_dict()
         self.non_mutating_keys = ["num_neurons", "anatomy_matrix", "anatomy_labels", "SBA_labels"]
 
+class DA_ParamsInitialiser(ParamsInitialiser):
+    def __init__(self):
+        super(DA_ParamsInitialiser, self).__init__()
+        self.params_dict = DA_get_params_dict()
+        self.non_mutating_keys = ["num_neurons", "anatomy_matrix", "anatomy_labels", "SBA_labels"]
+
+
 class ConfigsConverter(ParamsInitialiser):
     def __init__(self):
         super(ConfigsConverter, self).__init__()
@@ -160,7 +169,7 @@ class TL_FitnessMeasurer():
 
         """
         self.activity_related = activity.iloc[:, 2:]
-        self.tl_accu_times = TL_conditions_accu_dict
+        self.accu_times, self.anatomy_labels = self._load_acc_dict()
         self.fitness_score = None
         self.time_step = time_step
 
@@ -168,27 +177,31 @@ class TL_FitnessMeasurer():
         
         activity_np_related = np.array(self.activity_related)
 
-        train_S_period1 = activity_np_related[0:int(self.tl_accu_times["train_S"]/self.time_step), 0]
-        train_S_period2 = activity_np_related[int(self.tl_accu_times["rest1"]/self.time_step):int(self.tl_accu_times["test_S"]/self.time_step), 0]
+        train_S_period1 = activity_np_related[0:int(self.accu_times["train_S"]/self.time_step), 0]
+        train_S_period2 = activity_np_related[int(self.accu_times["rest1"]/self.time_step):int(self.accu_times["test_S"]/self.time_step), 0]
         train_S_plus = self._jump_function(self._sqrtCov_function(train_S_period1, train_S_period2), 0.2, 1)
 
-        train_S_non_period1 = activity_np_related[int(self.tl_accu_times["train_S"]/self.time_step):int(self.tl_accu_times["rest1"]/self.time_step), 0]
-        train_S_non_period2 = activity_np_related[int(self.tl_accu_times["test_S"]/self.time_step):, 0]
+        train_S_non_period1 = activity_np_related[int(self.accu_times["train_S"]/self.time_step):int(self.accu_times["rest1"]/self.time_step), 0]
+        train_S_non_period2 = activity_np_related[int(self.accu_times["test_S"]/self.time_step):, 0]
         train_S_minus = np.mean(np.append(train_S_non_period1, train_S_non_period2)) * -1
 
-        train_A_period1 = activity_np_related[int(self.tl_accu_times["train_ISI"]/self.time_step):int(self.tl_accu_times["train_A"]/self.time_step), 9]
-        train_A_period2 = activity_np_related[int(self.tl_accu_times["test_ISI"]/self.time_step):int(self.tl_accu_times["Test_A"]/self.time_step), 9]
+        train_A_period1 = activity_np_related[int(self.accu_times["train_ISI"]/self.time_step):int(self.accu_times["train_A"]/self.time_step), 9]
+        train_A_period2 = activity_np_related[int(self.accu_times["test_ISI"]/self.time_step):int(self.accu_times["Test_A"]/self.time_step), 9]
         train_A_plus = self._jump_function(self._sqrtCov_function(train_A_period1,train_A_period2), 0.2, 1)
 
-        train_A_non_period1 = activity_np_related[0:int(self.tl_accu_times["train_ISI"]/self.time_step), 9]
-        train_A_non_period2 = activity_np_related[int(self.tl_accu_times["train_A"]/self.time_step):int(self.tl_accu_times["test_ISI"]/self.time_step), 9]
+        train_A_non_period1 = activity_np_related[0:int(self.accu_times["train_ISI"]/self.time_step), 9]
+        train_A_non_period2 = activity_np_related[int(self.accu_times["train_A"]/self.time_step):int(self.accu_times["test_ISI"]/self.time_step), 9]
         train_A_minus = np.mean(np.append(train_A_non_period1, train_A_non_period2)) * -1
 
-        rest_non_period = activity_np_related[int(self.tl_accu_times["train_A"]/self.time_step):int(self.tl_accu_times["rest1"]/self.time_step), 1:9] * -1
+        rest_non_period = activity_np_related[int(self.accu_times["train_A"]/self.time_step):int(self.accu_times["rest1"]/self.time_step), 1:9] * -1
         rest_minus = np.mean(rest_non_period)
 
         score = train_S_plus + train_S_minus + train_A_plus + train_A_minus + rest_minus *2
         return score
+    
+    @staticmethod
+    def _load_acc_dict():
+        return TL_conditions_accu_dict, TL_get_params_dict()["anatomy_labels"]
     
     @staticmethod
     def _sqrtCov_function(arr1, arr2):
@@ -208,8 +221,33 @@ class TL_FitnessMeasurer():
             return val
 
 
+class DA_FitnessMeasurer(TL_FitnessMeasurer):
+    
+    def calc_fitness(self):
+        activity_np_related = np.array(self.activity_related)
+        # S must have at least 1% of firing activity in the period of S
+        least_S = np.mean(activity_np_related[0:int(self.accu_times["S"]/self.time_step), 0:self.anatomy_labels["sensory1"]])
+        S_least_score = self._jump_function(least_S, 0.1, 1)
+        # B must have at least > 10 firing event over entire period
+        B_activities = activity_np_related[:, self.anatomy_labels["sensory1"]:self.anatomy_labels["brain"]]
+        least_B = np.sum(B_activities)
+        B_least_score = self._jump_function(least_B, 10, 1)
+        # A must have at least > 10 firing event
+        A_activities = activity_np_related[:, self.anatomy_labels["brain"]:self.anatomy_labels["action1"]]
+        least_A = np.sum(A_activities)
+        A_least_score = self._jump_function(least_A, 10, 1)
+        # Delay score = (time of first onset of A firing) - (time of first onset of B firing)
+        delay_score = 0
+        if least_A > 0:
+            A_fire_time = np.min(np.where(A_activities > 0)[0]) * self.time_step
+            B_fire_time = np.min(np.where(B_activities > 0)[0]) * self.time_step
+            delay_score = (A_fire_time - B_fire_time) * 2
+        fitness_score = S_least_score + B_least_score + A_least_score + delay_score
+        return fitness_score
 
-
+    @staticmethod
+    def _load_acc_dict():
+        return DA_conditions_accu_dict, DA_get_params_dict()["anatomy_labels"]
 
 
 if __name__ == "__main__":

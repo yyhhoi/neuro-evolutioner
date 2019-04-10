@@ -1,8 +1,8 @@
 from neuroevolutioner.Environments import Simulation
 from neuroevolutioner.Ensembles import Ensemble_AdEx
 from neuroevolutioner.utils import load_pickle, write_pickle
-from neuroevolutioner.Genetics import TL_ParamsInitialiser, ConfigsConverter, TL_FitnessMeasurer, crossover, mutation
-from neuroevolutioner.Experiments import TL_Experimenter
+from neuroevolutioner.Genetics import TL_ParamsInitialiser, ConfigsConverter, TL_FitnessMeasurer, crossover, mutation, DA_ParamsInitialiser, DA_FitnessMeasurer
+from neuroevolutioner.Experiments import TL_Experimenter, DA_Experimenter
 from neuroevolutioner.Probes import Probe
 
 from abc import ABC, abstractmethod
@@ -12,11 +12,12 @@ import pandas as pd
 from glob import glob
 
 class Evolutioner(ABC):
-    def __init__(self, project_name, num_generations=10, num_species=1000, time_step = 0.005):
+    def __init__(self, project_name, num_generations=10, num_species=1000, time_step = 0.005, I_ext_multiplier = 1e-10):
         self.project_name, self.num_gens, self.num_species = project_name, num_generations, num_species
         self.activity_results_filename, self.gene_results_filename, self.HOF_filename = "activity.csv", "gene.pickle", "hall_of_fame.csv"
         self.winners_filename, self.finish_mark_filename = "winners.csv", "finished.txt"
         self.proj_results_dir = os.path.join("experiment_results", project_name)
+        self.I_ext_multiplier = I_ext_multiplier
         self.time_step = time_step
         self.measurer = None
         
@@ -195,7 +196,7 @@ class Evolutioner(ABC):
             _, condition, label,  I_ext = exper.get_stimulation_info(time)
 
             # Apply current and update the dynamics
-            ensemble.I_ext = I_ext * 1e-9
+            ensemble.I_ext = I_ext * self.I_ext_multiplier
             ensemble.state_update()
 
             # Increment simulation environment
@@ -236,4 +237,19 @@ class TL_Evolutioner(Evolutioner):
         return fitness_score
     def _initialise_experimenter(self, num_neurons, anatomy_labels):
         exper = TL_Experimenter(num_neurons, anatomy_labels)
+        return exper
+
+class DA_Evolutioner(Evolutioner):
+    def __init__(self, project_name, num_generations=10, num_species=1000, time_step = 0.0001):
+        super(DA_Evolutioner, self).__init__(project_name, num_generations=num_generations, num_species=num_species, time_step=time_step)
+    def _sample_new_configs(self):
+        params_initialiser = DA_ParamsInitialiser()
+        configs = params_initialiser.sample_new_configs()
+        return configs
+    def _calc_fitness_score(self, activity):
+        self.measurer = DA_FitnessMeasurer(activity, self.time_step)
+        fitness_score = self.measurer.calc_fitness()
+        return fitness_score
+    def _initialise_experimenter(self, num_neurons, anatomy_labels):
+        exper = DA_Experimenter(num_neurons, anatomy_labels)
         return exper
