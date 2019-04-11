@@ -11,6 +11,8 @@ def write_pickle(file_path, data):
         pickle.dump(data, fh)
     return None
 
+
+
 class OnlineFilter_np():
     def __init__(self, input_size, kernel_size, time_step):
         self.input_size = input_size

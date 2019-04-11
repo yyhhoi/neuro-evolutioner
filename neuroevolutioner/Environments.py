@@ -3,6 +3,7 @@
 class Simulation():
     def __init__(self, stop_time = None, epsilon = 0.001):
         self.time = 0
+        self.steps = 0
         self.epsilon = epsilon
         self.stop_time = stop_time
         self.sim_stop = False
@@ -12,6 +13,7 @@ class Simulation():
 
     def increment(self):
         self.time += self.epsilon
+        self.steps += 1
         if self.time >= self.stop_time:
             self.sim_stop = True
         else:
