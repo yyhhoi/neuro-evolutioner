@@ -1,7 +1,8 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from graphviz import Digraph
-
+from .DataProcessing import calculate_firing_rate
+import pandas as pd
 
 # 1. Preprocess activity.csv and gene.pickle to generate firing_rate/firing_rate_$TIME.json and weights/weights_$TIME.json
 # 2. Call Visualiser.initialise() to get self.weight_range and self.rate_range, for normalisation of color
@@ -13,12 +14,12 @@ from graphviz import Digraph
 # 1. self._find_normalisation_params()
 
 class Visualiser():
-    def __init__(self, firing_rate_dir, weights_dir, configs ):
+    def __init__(self, firing_rate_path, weights_dir, configs ):
         self.num_neurons = configs["num_neurons"]
         self.anatomy_matrix = configs["anatomy_matrix"]
         self.anatomy_labels = configs["anatomy_labels"]
-        self.types_matrix = configs["types_matrix"]
-        self.firing_rate_dir, self.weights_dir = firing_rate_dir, weights_dir
+        self.types_matrix = self._binarise_types(configs["types_matrix"])
+        self.firing_rate_path, self.weights_dir = firing_rate_path, weights_dir
         pass
 
     def initialise(self):
@@ -100,10 +101,10 @@ class Visualiser():
             row_idx, col_idx = con_row[idx], con_col[idx]
             
             # Define connection attributes
-            pre_neuron = neurons_dict[row_idx][0]
-            post_neuron = neurons_dict[col_idx][0]
+            pre_neuron = self.neurons_labels[row_idx][0]
+            post_neuron = self.neurons_labels[col_idx][0]
             weight= self._normalise_weight(weights[row_idx, col_idx])
-            synapse_type = self._binarise_types(types_matrix[row_idx, col_idx] )
+            synapse_type = self.types_matrix[row_idx, col_idx]
             edge_color = "blue" if synapse_type==1 else "red"
             
             # Set edge
@@ -124,13 +125,10 @@ class Visualiser():
     def _normalise_rate(self, val):
         return val/self.rate_range
     @staticmethod
-    def _binarise_types(val):
-        if val > 0.5:
-            return 1
-        else:
-            return 0
+    def _binarise_types(arr):
+        arr[ arr > 0.5] = 1
+        arr[arr < 0.5 ] = 0
+        return arr
 
-
-        
 
 

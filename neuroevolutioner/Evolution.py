@@ -331,15 +331,6 @@ class DA_Simulator(DA_Evolutioner):
         # Simulation starts
         self._loop_simulate(simenv, ensemble, exper)
 
-        # Get fitness score and print
-        activity = pd.read_csv(self.get_activity_path(gen_idx, species_idx))
-        fitness_score = self._calc_fitness_score(activity)
-        self._write_to_HOF(gen_idx, species_idx, fitness_score)
-        print("Fitness: %0.4f"%(fitness_score))
-
-        # Mark it as finsihed
-        with open(self.get_finished_mark_path(gen_idx, species_idx), "w") as fh:
-            fh.write("finished")
 
     def _write_out_probe(self, time, steps, condition, firing_mask_str, weights_np):
         self.probe.write_out_activity(time, condition, firing_mask_str) 
