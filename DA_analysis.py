@@ -2,6 +2,7 @@ import pandas as pd
 
 from neuroevolutioner.Evolution import DA_Evolutioner, DA_Simulator
 from neuroevolutioner.DataProcessing import DA_data_processing
+from neuroevolutioner.Visualisation import Visualiser_wrapper
 
 project_name = "delayed_activation"
 num_generations = 20
@@ -26,5 +27,18 @@ vis_dir = "experiment_results/visualisation"
 # evo_vis.simulation_for_visualisation(selected_gen,selected_species)
 
 # ======================= preprocessing =========================================
-da_pro = DA_data_processing(project_name, vis_dir, time_step)
-da_pro.produce_firing_rate(selected_gen, selected_species)
+# da_pro = DA_data_processing(project_nam5e, vis_dir, time_step)
+# da_pro.produce_firing_rate(selected_gen, selected_species)
+
+# ======================= Generate graphs ======================================
+import warnings
+warnings.filterwarnings("error")
+viser = Visualiser_wrapper(project_name,
+                           vis_dir,
+                           selected_gen,
+                           selected_species,
+                           time_step)
+
+viser.initialise()
+# viser.generate_graphs()
+viser.combine_graphs_to_video()

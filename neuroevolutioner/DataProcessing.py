@@ -34,7 +34,7 @@ class DA_data_processing():
         firing_rate = calculate_firing_rate(act_np, kernel_size, self.time_step)
         df_rate = df_act.copy()
         df_rate.iloc[:, df_col] = firing_rate
-        df_rate.to_csv(firing_rate_save_path)
+        df_rate.to_csv(firing_rate_save_path, index=False)
 
 
 

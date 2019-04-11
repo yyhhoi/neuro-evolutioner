@@ -2,7 +2,13 @@ import numpy as np
 import matplotlib.pyplot as plt
 from graphviz import Digraph
 from .DataProcessing import calculate_firing_rate
+from .utils import load_pickle
+import skimage.io as ski
+import skvideo.io as skv
+import os
+from glob import glob
 import pandas as pd
+import pdb
 
 # 1. Preprocess activity.csv and gene.pickle to generate firing_rate/firing_rate_$TIME.json and weights/weights_$TIME.json
 # 2. Call Visualiser.initialise() to get self.weight_range and self.rate_range, for normalisation of color
@@ -14,16 +20,19 @@ import pandas as pd
 # 1. self._find_normalisation_params()
 
 class Visualiser():
-    def __init__(self, firing_rate_path, weights_dir, configs ):
+    def __init__(self, firing_rate_path, weights_dir, graph_dir, time_step, configs ):
         self.num_neurons = configs["num_neurons"]
         self.anatomy_matrix = configs["anatomy_matrix"]
         self.anatomy_labels = configs["anatomy_labels"]
         self.types_matrix = self._binarise_types(configs["types_matrix"])
-        self.firing_rate_path, self.weights_dir = firing_rate_path, weights_dir
-        pass
+        self.firing_rate_path, self.weights_dir, self.graph_dir = firing_rate_path, weights_dir, graph_dir
+        self.time_step = time_step
 
     def initialise(self):
-        self.weight_max, self.weight_min, self.rate_max, self.rate_min = self._find_normalisation_params()
+        """
+        Load firing rate to np
+        """
+        self.weight_max, self.weight_min, self.rate_max, self.rate_min = self._load_and_find_params()
         self.weight_range = self.weight_max - self.weight_min
         self.rate_range = self.rate_max - self.rate_min
 
@@ -31,7 +40,7 @@ class Visualiser():
         """
         Args:
             neurons_pos: (np.darray) with shape (num_neurons, 2) representing the (x,y) position of each neuron in the graph
-            neurons_labels: (np.darray) with shape (num_neurons,). Labels for all neurons, for example, ["S", "B1", "B2", "A"]...
+            neurons_labels: (list) with length = num_neurons. Labels for all neurons, for example, ["S", "B1", "B2", "A"]...
         """
         self.neuron_pos = neurons_pos
         self.neurons_labels = neurons_labels
@@ -52,6 +61,21 @@ class Visualiser():
         self.node_shape_style = node_shape_style
         self.node_radius = str(node_radius)
     
+    def visualise_all_moments(self):
+        total_len = self.firing_rate_np.shape[0]
+        for i in range(total_len):
+            # if i != 97:
+            #     continue
+            print("Visualising %d/%d" % (i, total_len))
+            graph_name = "time = %0.4f" % (i*self.time_step)
+            file_path = os.path.join(self.graph_dir, "graph_%d" % (i))
+            firing_rate = self.firing_rate_np[i, :]
+            weights = np.load(os.path.join(self.weights_dir, "weights_%d.npy" % i))
+            weights[np.isnan(weights)] = 0
+            self.visualise_one_moment(graph_name, file_path, firing_rate, weights)
+
+
+
     def visualise_one_moment(self, graph_name, file_path, firing_rate, weights):
         """
         Args:
@@ -79,7 +103,7 @@ class Visualiser():
         for i in range(self.num_neurons):
 
             # Determine the position of neuron_i
-            neuron_pos_str = "%f,%f!" % (self.neuron_pos[i][0], self.neuron_pos[i][0])
+            neuron_pos_str = "%f,%f!" % (self.neuron_pos[i,0], self.neuron_pos[i,1])
             
             # Determine the color of neuron_i from firing rate
             firing_rate_norm = self._normalise_rate(firing_rate[i])
@@ -101,8 +125,8 @@ class Visualiser():
             row_idx, col_idx = con_row[idx], con_col[idx]
             
             # Define connection attributes
-            pre_neuron = self.neurons_labels[row_idx][0]
-            post_neuron = self.neurons_labels[col_idx][0]
+            pre_neuron = self.neurons_labels[row_idx]
+            post_neuron = self.neurons_labels[col_idx]
             weight= self._normalise_weight(weights[row_idx, col_idx])
             synapse_type = self.types_matrix[row_idx, col_idx]
             edge_color = "blue" if synapse_type==1 else "red"
@@ -113,9 +137,12 @@ class Visualiser():
 
         dot.render(file_path, cleanup=True, view=False)
     
-    def _find_normalisation_params(self):
-        weight_max, weight_min = 0,0
-        rate_max, rate_min  = 0,0
+    def _load_and_find_params(self):
+        firing_rate_df = pd.read_csv(self.firing_rate_path)
+        self.firing_rate_np = np.array(firing_rate_df.iloc[:, 2:])
+
+        weight_max, weight_min = 5, 0 # clipped algorithmically
+        rate_max, rate_min  = np.max(self.firing_rate_np),np.min(self.firing_rate_np)
         return weight_max, weight_min, rate_max, rate_min
 
 
@@ -131,4 +158,81 @@ class Visualiser():
         return arr
 
 
+class Visualiser_wrapper():
+    def __init__(self, project_name, vis_dir, gen_idx, species_idx, time_step = 0.0001):
+        # Paths and names
+        self.project_name = project_name
+        self.weights_dirname, self.firing_rate_filename, self.configs_filename = "weights", "firing_rate.csv", "gene.pickle"
+        self.gen_idx, self.species_idx = gen_idx, species_idx
+        self.graph_dir_name, self.vis_dir, self.identifier = "graphs", vis_dir, "gen-{}_species-{}".format(self.gen_idx, self.species_idx)
+        self.create_graphs_dir()
 
+        # Configs related
+        self.configs = self.load_configs()
+        self.anatomy_labels, self.num_neurons = self.configs["anatomy_labels"], self.configs["num_neurons"]
+        
+        # initialise visualiser
+        self.visualiser = Visualiser(self.get_firing_rate_path(),
+                                     self.get_weight_dir(), 
+                                     self.get_graph_dir(), 
+                                     time_step , 
+                                     self.configs)
+    def initialise(self):
+        neurons_pos, neurons_labels = self._setup_pose_labels()
+        self.visualiser.initialise()
+        self.visualiser.set_neurons_params(neurons_pos, neurons_labels)
+        self.visualiser.set_graph_params()
+    def generate_graphs(self):
+        self.visualiser.visualise_all_moments()
+
+    def combine_graphs_to_video(self, frame_rate = '120/1'):
+        all_graphs_paths = glob(os.path.join(self.get_graph_dir(), "*.png"))
+        total_graphs_num = len(all_graphs_paths)
+        self.vwriter = skv.FFmpegWriter(self.get_video_path(),inputdict={'-r': frame_rate}, outputdict={'-r': frame_rate})
+        print("Generate video...")
+        for idx in range(total_graphs_num):
+            print("\r{}/{}".format(idx,total_graphs_num), end="", flush=True)
+            graph_path = self.get_graph_path(idx)
+            im = ski.imread(graph_path)
+            self.vwriter.writeFrame(im)
+
+        self.vwriter.close()
+
+
+
+    def _setup_pose_labels(self):
+        num_brain_neurons = self.anatomy_labels["brain"] - self.anatomy_labels["sensory1"]
+        neurons_labels = ["S"] +  ["B%d" % (x+1) for x in range(num_brain_neurons)] + ["A"]
+        r, r_bias = 3, 2
+        neurons_pos = [[-(r + r_bias), -0.5]] + \
+                     [[r*np.cos((np.pi/-4)*(i+1)), r*np.sin((np.pi/-4)*(i+1))] for i in range(num_brain_neurons)] + \
+                     [[r + r_bias, -0.5]]
+        neurons_pos = np.array(neurons_pos)
+        return neurons_pos, neurons_labels
+    def get_base_dir(self):
+        return os.path.join(self.vis_dir, self.project_name, self.identifier)
+
+    def get_weight_dir(self):
+        return os.path.join(self.get_base_dir(), self.weights_dirname)
+    
+    def create_graphs_dir(self):
+        os.makedirs(os.path.join(self.get_base_dir(), self.graph_dir_name), exist_ok=True)
+        
+    def get_video_path(self):
+        return os.path.join(self.get_base_dir(), self.identifier + ".mp4")
+    def get_graph_dir(self):
+        return os.path.join(self.get_base_dir(), self.graph_dir_name)
+    def get_graph_path(self, idx):
+        return os.path.join(self.get_graph_dir(), "graph_{}.png".format(idx))
+
+    def get_firing_rate_path(self):
+        return os.path.join(self.get_base_dir(), self.firing_rate_filename)
+    def get_configs_path(self):
+        return os.path.join(self.get_base_dir(), self.configs_filename)
+
+    def load_configs(self):
+        return load_pickle(self.get_configs_path())
+
+    def __del__(self):
+        if self.vwriter is not None:
+            self.vwriter.close()
