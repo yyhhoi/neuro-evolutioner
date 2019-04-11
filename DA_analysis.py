@@ -11,5 +11,10 @@ time_step = 0.0001
 # for i in range(num_generations):
 #     evo.proliferate_one_generation(i)
 
-evo_vis = DA_Simulator("delayed_activation", num_generations, num_species, time_step)
+evo_vis = DA_Simulator( project_name="delayed_activation", 
+                        exp_results_dir = "experiment_results", 
+                        vis_dir = "experiment_results/visualisation",
+                        num_generations=num_generations,
+                        num_species=num_species, 
+                        time_step=time_step)
 evo_vis.simulation_for_visualisation(15,585)

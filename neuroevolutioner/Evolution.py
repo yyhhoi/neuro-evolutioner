@@ -12,11 +12,11 @@ import pandas as pd
 from glob import glob
 
 class Evolutioner(ABC):
-    def __init__(self, project_name, num_generations=10, num_species=1000, time_step = 0.005, I_ext_multiplier = 1e-10):
+    def __init__(self, project_name, exp_results_dir="", num_generations=10, num_species=1000, time_step = 0.005, I_ext_multiplier = 1e-10):
         self.project_name, self.num_gens, self.num_species = project_name, num_generations, num_species
         self.activity_results_filename, self.gene_results_filename, self.HOF_filename = "activity.csv", "gene.pickle", "hall_of_fame.csv"
         self.winners_filename, self.finish_mark_filename = "winners.csv", "finished.txt"
-        self.proj_results_dir = os.path.join("experiment_results", project_name)
+        self.proj_results_dir = os.path.join(exp_results_dir, project_name)
 
         # Experiment
         self.I_ext_multiplier = I_ext_multiplier
@@ -254,8 +254,8 @@ class Evolutioner(ABC):
 
 
 class TL_Evolutioner(Evolutioner):
-    def __init__(self, project_name, num_generations=10, num_species=1000, time_step = 0.0005):
-        super(TL_Evolutioner, self).__init__(project_name, num_generations=num_generations, num_species=num_species, time_step=time_step)
+    def __init__(self, project_name,exp_results_dir = "", num_generations=10, num_species=1000, time_step = 0.0005):
+        super(TL_Evolutioner, self).__init__(project_name, exp_results_dir, num_generations=num_generations, num_species=num_species, time_step=time_step)
     def _sample_new_configs(self):
         params_initialiser = TL_ParamsInitialiser()
         configs = params_initialiser.sample_new_configs()
@@ -271,8 +271,12 @@ class TL_Evolutioner(Evolutioner):
         self.probe.write_out_activity(time, condition, firing_mask_str)    
 
 class DA_Evolutioner(Evolutioner):
-    def __init__(self, project_name, num_generations=10, num_species=1000, time_step = 0.0001):
-        super(DA_Evolutioner, self).__init__(project_name, num_generations=num_generations, num_species=num_species, time_step=time_step)
+    def __init__(self, project_name, exp_results_dir="", num_generations=10, num_species=1000, time_step = 0.0001):
+        super(DA_Evolutioner, self).__init__(project_name = project_name, 
+                                            exp_results_dir = exp_results_dir, 
+                                            num_generations=num_generations, 
+                                            num_species=num_species, 
+                                            time_step=time_step)
     def _sample_new_configs(self):
         params_initialiser = DA_ParamsInitialiser()
         configs = params_initialiser.sample_new_configs()
@@ -288,10 +292,10 @@ class DA_Evolutioner(Evolutioner):
         self.probe.write_out_activity(time, condition, firing_mask_str)    
 
 class DA_Simulator(DA_Evolutioner):
-    def __init__(self, project_name, num_generations=10, num_species=1000, time_step = 0.0001):
-        super(DA_Simulator, self).__init__(project_name, num_generations=num_generations, num_species=num_species, time_step=time_step)
+    def __init__(self, project_name, exp_results_dir, vis_dir, num_generations=10, num_species=1000, time_step = 0.0001):
+        super(DA_Simulator, self).__init__(project_name, exp_results_dir, num_generations=num_generations, num_species=num_species, time_step=time_step)
         # Visulisation
-        self.vis_dir = os.path.join("experiment_results", "visualisation", project_name)
+        self.vis_dir = os.path.join(vis_dir, project_name)
         self.vis_weights_dirname = "weights"
 
     def simulation_for_visualisation(self, gen_idx, species_idx):
