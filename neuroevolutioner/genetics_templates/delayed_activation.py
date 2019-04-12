@@ -52,7 +52,7 @@ params_dict = {
     "tau_syn": (1e-3, 1e-1, 3, 2), # Log10Uniform
     "E_syn_inhib": (-90e-3, -60e-3, 2, 2), # Uniform  
     "E_syn_excite": (-20, 30, 2, 2), # Uniform  
-    "g_syn_constant": (1e-2, 1e1, 3, 2), # Log10Uniform
+    "g_syn_constant": (2, 0.5, 1, 2), # Rect Normal
 
     # Weights
     "w": (0.3, 0.3, 1, 2), # Rect Normal

@@ -24,7 +24,9 @@ class Visualiser():
         self.num_neurons = configs["num_neurons"]
         self.anatomy_matrix = configs["anatomy_matrix"]
         self.anatomy_labels = configs["anatomy_labels"]
-        self.types_matrix = self._binarise_types(configs["types_matrix"])
+        self.E_syn = configs["E_syn"]
+        self.u_rest = configs["u_rest"]
+        self.types_matrix = self._binarise_types(self.E_syn, self.u_rest)
         self.firing_rate_path, self.weights_dir, self.graph_dir = firing_rate_path, weights_dir, graph_dir
         self.time_step = time_step
 
@@ -152,10 +154,9 @@ class Visualiser():
     def _normalise_rate(self, val):
         return val/self.rate_range
     @staticmethod
-    def _binarise_types(arr):
-        arr[ arr > 0.5] = 1
-        arr[arr < 0.5 ] = 0
-        return arr
+    def _binarise_types(E_syn, u_rest):
+        type_matrix = (E_syn > np.repeat(u_rest.reshape(1,-1), u_rest.shape[0], axis = 0)).astype(int)
+        return type_matrix
 
 
 class Visualiser_wrapper():

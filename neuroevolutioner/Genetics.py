@@ -233,10 +233,10 @@ class DA_FitnessMeasurer(TL_FitnessMeasurer):
         # S must have at least 1% of firing activity in the period of S
         least_S = np.mean(activity_np_related[0:int(self.accu_times["S"]/self.time_step), 0:self.anatomy_labels["sensory1"]])
         S_least_score = self._jump_function(least_S, val_threshold = 0.01, jump_target = 1)
-        # B must have 1% - 50% firing event over entire period
+        # B must have > 1% firing event over entire period
         B_activities = activity_np_related[:, self.anatomy_labels["sensory1"]:self.anatomy_labels["brain"]]
         B_times, B_percent = np.sum(B_activities), np.mean(B_activities)
-        B_least_score = self._jump_function(B_percent, val_threshold = 0.01, jump_target = 1, val_max = 0.5)
+        B_least_score = self._jump_function(B_percent, val_threshold = 0.01, jump_target = 1)
         # A must have at least > 2 firing event in the entired period
         A_activities = activity_np_related[:, self.anatomy_labels["brain"]:self.anatomy_labels["action1"]]
         A_times = np.sum(A_activities)

@@ -2,9 +2,9 @@ import pandas as pd
 
 from neuroevolutioner.Evolution import DA_Evolutioner, DA_Simulator
 from neuroevolutioner.DataProcessing import DA_data_processing
-# from neuroevolutioner.Visualisation import Visualiser_wrapper
-import warnings
-warnings.filterwarnings("error")
+from neuroevolutioner.Visualisation import Visualiser_wrapper
+# import warnings
+# warnings.filterwarnings("error")
 
 project_name = "delayed_activation"
 exp_results_dir = "experiment_results"
@@ -13,19 +13,19 @@ num_species = 1000
 time_step = 0.0005
 
 # ======================= Evolution =========================================
-evo = DA_Evolutioner(project_name = project_name,
-                     exp_results_dir = "experiment_results", 
-                     num_generations = num_generations, 
-                     num_species = num_species,
-                     time_step = time_step)
-for i in range(num_generations):
-    evo.proliferate_one_generation(i)
+# evo = DA_Evolutioner(project_name = project_name,
+#                      exp_results_dir = "experiment_results", 
+#                      num_generations = num_generations, 
+#                      num_species = num_species,
+#                      time_step = time_step)
+# for i in range(num_generations):
+#     evo.proliferate_one_generation(i)
 
 
 
 # ======================= Simulation for visualisation =========================================
-selected_gen = 15
-selected_species = 585
+selected_gen = 5
+selected_species = 980
 vis_dir = "experiment_results/visualisation"
 # evo_vis = DA_Simulator( project_name=project_name, 
 #                         exp_results_dir = "experiment_results", 
