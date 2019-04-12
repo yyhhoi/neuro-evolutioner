@@ -138,7 +138,7 @@ class WeightsDynamics():
 
         """
         self._initialise_params(
-            anatomy = configs["anatomy_matrix"], types = configs["types_matrix"], w = configs["w"], w_max = configs["w_max"],
+            anatomy = configs["anatomy_matrix"], w = configs["w"], w_max = configs["w_max"], E_syn = configs["E_syn"], u_rest = configs["u_rest"],
             tau_LTP = configs["tau_LTP"], tau_LTP_slow = configs["tau_LTP_slow"], tau_LTD = configs["tau_LTD"], A = configs["A"],
             beta = configs["beta"], w_p = configs["w_p"], P = configs["P"], tau_cons = configs["tau_cons"],
             transmitter_constants = configs["transmitter_constants"],
@@ -148,7 +148,7 @@ class WeightsDynamics():
         pass
 
     def _initialise_params(self,
-                          anatomy, types, w, w_max,
+                          anatomy, w, w_max, E_syn, u_rest,
                           tau_LTP, tau_LTP_slow, tau_LTD, A,
                           beta, w_p, P, tau_cons,
                           transmitter_constants,
@@ -159,7 +159,8 @@ class WeightsDynamics():
         Args:
             A, B, beta, transmitter_constants, eta: recommended > 0
         """
-        self.w, self.w_max, self.anatomy, self.types = w, w_max, anatomy, types
+        self.w, self.w_max, self.anatomy = w, w_max, anatomy
+        self.types = (E_syn > np.repeat(u_rest.reshape(1,-1), u_rest.shape[0], axis = 0)).astype(int)
 
         # LTP/LTD
         self.z_LTP = SpikeTrace(self.num_neurons, tau_LTP, self.time_step)
@@ -174,7 +175,8 @@ class WeightsDynamics():
         self.transmitter_constants = transmitter_constants
         
         # Homeostatic
-        self.z_ht = SpikeTrace(self.num_neurons, tau_ht, self.time_step)
+        self.tau_ht = tau_ht
+        self.z_ht = SpikeTrace(self.num_neurons, self.tau_ht, self.time_step)
         self.tau_hom = tau_hom
         
         # Long-term inhibition

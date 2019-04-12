@@ -214,8 +214,13 @@ class TL_FitnessMeasurer():
             output = np.sqrt(cov_mean)
         return output
     @staticmethod
-    def _jump_function(val, val_threshold, jump_target, fail_target = 0):
-        if val > val_threshold:
+    def _jump_function(val, val_threshold, jump_target, fail_target = 0, val_max = None):
+        condition = (val > val_threshold)
+        if val_max is None:
+            condition = (val > val_threshold)
+        else:
+            condition = ((val > val_threshold) and (val < val_max))
+        if condition:
             return jump_target
         else:
             return fail_target
@@ -227,18 +232,18 @@ class DA_FitnessMeasurer(TL_FitnessMeasurer):
         activity_np_related = np.array(self.activity_related)
         # S must have at least 1% of firing activity in the period of S
         least_S = np.mean(activity_np_related[0:int(self.accu_times["S"]/self.time_step), 0:self.anatomy_labels["sensory1"]])
-        S_least_score = self._jump_function(least_S, 0.01, 1, 0)
-        # B must have at least > 2 firing event over entire period
+        S_least_score = self._jump_function(least_S, val_threshold = 0.01, jump_target = 1)
+        # B must have 1% - 50% firing event over entire period
         B_activities = activity_np_related[:, self.anatomy_labels["sensory1"]:self.anatomy_labels["brain"]]
-        least_B = np.sum(B_activities)
-        B_least_score = self._jump_function(least_B, 2,  1, 0)
-        # A must have at least > 2 firing event
+        B_times, B_percent = np.sum(B_activities), np.mean(B_activities)
+        B_least_score = self._jump_function(B_percent, val_threshold = 0.01, jump_target = 1, val_max = 0.5)
+        # A must have at least > 2 firing event in the entired period
         A_activities = activity_np_related[:, self.anatomy_labels["brain"]:self.anatomy_labels["action1"]]
-        least_A = np.sum(A_activities)
-        A_least_score = self._jump_function(least_A, 2, 1, 0)
+        A_times = np.sum(A_activities)
+        A_least_score = self._jump_function(A_times, val_threshold = 2, jump_target = 1)
         # Delay score = (time of first onset of A firing) - (time of first onset of B firing)
         delay_score = 0
-        if (least_A > 0) and (least_B > 0):
+        if (A_times > 0) and (B_times > 0):
             A_fire_time = np.min(np.where(A_activities > 0)[0]) * self.time_step
             B_fire_time = np.min(np.where(B_activities > 0)[0]) * self.time_step
             delay_score = (A_fire_time - B_fire_time) * 2

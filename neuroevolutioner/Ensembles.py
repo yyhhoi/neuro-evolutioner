@@ -31,7 +31,7 @@ class Ensemble_AdEx(object):
 
     def _membrane_potential_dyanmics_update(self):
 
-        non_linear_kernal = -(self.u - self.u_rest) + self.sharpness * np.exp((self.u-self.u_threshold)/self.sharpness)
+        non_linear_kernal = -(self.u - self.u_rest) + self.sharpness * np.exp((self.u-self.u_threshold)/(self.sharpness+1e-6))
         du_dt = (non_linear_kernal - self.r_m * self.w + self.r_m * self.I_ext - self.r_m * self.synaptic_currents)/self.tau_m
         
         dw_dt = (self.a * (self.u - self.u_rest) - self.w + (self.b * self.tau_w * self.firing_mask.get_mask()) )/self.tau_w
@@ -55,7 +55,7 @@ class Ensemble_AdEx(object):
 
     
     def _calc_synaptic_current(self):
-        u_2d = np.repeat(self.u.reshape(1,-1), self.num_neurons, axis=0)  # turn self.u to (1, num_neurons), then expand
+        u_2d = np.repeat(self.u.reshape(1,-1), self.num_neurons, axis=0)  # Expand row-wise
         current_2d = self.g * (u_2d - self.E_syn)
         current_1d = np.sum(current_2d, axis = 0)
         self.synaptic_currents = current_1d
