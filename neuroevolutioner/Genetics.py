@@ -249,7 +249,7 @@ class DA_FitnessMeasurer(TL_FitnessMeasurer):
             delay_score = (A_fire_time - B_fire_time)
         # Neurons' energy penality. 
         initial_energy_reserve = 0.2
-        energy_neurons = np.mean(activity_np_related, axis=0)
+        energy_neurons = np.mean(activity_np_related[1:8], axis=0)
         net_energy = initial_energy_reserve - np.max(energy_neurons)*3
         
         # Final score, S = {0,1}, B = {0, 1}, A = {0,1}, delay = {0, 2}, net_enery = {-2.8, 0.2}
