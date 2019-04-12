@@ -246,8 +246,15 @@ class DA_FitnessMeasurer(TL_FitnessMeasurer):
         if (A_times > 0) and (B_times > 0):
             A_fire_time = np.min(np.where(A_activities > 0)[0]) * self.time_step
             B_fire_time = np.min(np.where(B_activities > 0)[0]) * self.time_step
-            delay_score = (A_fire_time - B_fire_time) * 2
-        fitness_score = S_least_score + B_least_score + A_least_score + delay_score
+            delay_score = (A_fire_time - B_fire_time)
+        # Neurons' energy penality. 
+        initial_energy_reserve = 0.2
+        energy_neurons = np.mean(activity_np_related, axis=0)
+        net_energy = initial_energy_reserve - np.max(energy_neurons)*3
+        
+        # Final score, S = {0,1}, B = {0, 1}, A = {0,1}, delay = {0, 2}, net_enery = {-2.8, 0.2}
+        # Final_score = [-1.8, 5.2]
+        fitness_score = S_least_score + B_least_score + A_least_score + delay_score + net_energy
         return fitness_score
 
     @staticmethod
