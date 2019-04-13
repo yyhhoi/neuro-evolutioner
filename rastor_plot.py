@@ -5,7 +5,7 @@ from glob import glob
 from neuroevolutioner.Genetics import DA_FitnessMeasurer
 import numpy as np
 import pdb
-gen_idx = 22
+gen_idx = 26
 time_step = 0.0005
 base_dir = "experiment_results/delayed_activation/generation_{}".format(gen_idx)
 HOF_path = os.path.join(base_dir, "hall_of_fame.csv")

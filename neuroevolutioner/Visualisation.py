@@ -73,7 +73,8 @@ class Visualiser():
             file_path = os.path.join(self.graph_dir, "graph_%d" % (i))
             firing_rate = self.firing_rate_np[i, :]
             weights = np.load(os.path.join(self.weights_dir, "weights_%d.npy" % i))
-            weights[np.isnan(weights)] = 0
+            weights[np.isnan(weights)] = self.weight_min
+            weights[np.isinf(weights)] = self.weight_max
             self.visualise_one_moment(graph_name, file_path, firing_rate, weights)
 
 
@@ -107,9 +108,14 @@ class Visualiser():
             # Determine the position of neuron_i
             neuron_pos_str = "%f,%f!" % (self.neuron_pos[i,0], self.neuron_pos[i,1])
             
-            # Determine the color of neuron_i from firing rate
-            firing_rate_norm = self._normalise_rate(firing_rate[i])
-            color_arr = (np.array(self.rate_cmap(firing_rate_norm))*255).astype(int)
+            if firing_rate[i] == 1:
+                color_arr = (np.array(self.rate_cmap(255))*255).astype(int)
+            else:
+                color_arr = (np.array(self.rate_cmap(0))*255).astype(int)
+
+            # # Determine the color of neuron_i from firing rate
+            # firing_rate_norm = self._normalise_rate(firing_rate[i])
+            # color_arr = (np.array(self.rate_cmap(firing_rate_norm))*255).astype(int)
             fillcolor = "#%02x%02x%02x%02x" % tuple(color_arr)
 
             # Add node to the graph
@@ -143,7 +149,7 @@ class Visualiser():
         firing_rate_df = pd.read_csv(self.firing_rate_path)
         self.firing_rate_np = np.array(firing_rate_df.iloc[:, 2:])
 
-        weight_max, weight_min = 5, 0 # clipped algorithmically
+        weight_max, weight_min = 20, 0
         rate_max, rate_min  = np.max(self.firing_rate_np),np.min(self.firing_rate_np)
         return weight_max, weight_min, rate_max, rate_min
 
@@ -163,7 +169,7 @@ class Visualiser_wrapper():
     def __init__(self, project_name, vis_dir, gen_idx, species_idx, time_step = 0.0001):
         # Paths and names
         self.project_name = project_name
-        self.weights_dirname, self.firing_rate_filename, self.configs_filename = "weights", "firing_rate.csv", "gene.pickle"
+        self.weights_dirname, self.firing_rate_filename, self.configs_filename = "weights", "activity.csv", "gene.pickle"
         self.gen_idx, self.species_idx = gen_idx, species_idx
         self.graph_dir_name, self.vis_dir, self.identifier = "graphs", vis_dir, "gen-{}_species-{}".format(self.gen_idx, self.species_idx)
         self.create_graphs_dir()

@@ -16,8 +16,8 @@ def rectified_normal(mean, std, size):
 
 def gen_boundary(p1, p2, method_num):
     std_multiplier = 5
-    uniform_multiplier = 1/2
-    log10uniform_multiplier = 1/10
+    uniform_multiplier = 1
+    log10uniform_multiplier = 1
     if method_num == 0: # Normal
         min_num, max_num = p1 - std_multiplier*np.abs(p2), p1 + std_multiplier*np.abs(p2)
     elif method_num == 1: # Rectified Normal

@@ -2,7 +2,7 @@ import pandas as pd
 
 from neuroevolutioner.Evolution import DA_Evolutioner, DA_Simulator
 from neuroevolutioner.DataProcessing import DA_data_processing
-# from neuroevolutioner.Visualisation import Visualiser_wrapper
+from neuroevolutioner.Visualisation import Visualiser_wrapper
 # import warnings
 # warnings.filterwarnings("error")
 
@@ -13,27 +13,27 @@ num_species = 20
 time_step = 0.0005
 
 # # ======================= Evolution =========================================
-evo = DA_Evolutioner(project_name = project_name,
-                     exp_results_dir = "experiment_results", 
-                     num_generations = num_generations, 
-                     num_species = num_species,
-                     time_step = time_step)
-for i in range(num_generations):
-    evo.proliferate_one_generation(i)
+# evo = DA_Evolutioner(project_name = project_name,
+#                      exp_results_dir = "experiment_results", 
+#                      num_generations = num_generations, 
+#                      num_species = num_species,
+#                      time_step = time_step)
+# for i in range(num_generations):
+#     evo.proliferate_one_generation(i)
 
 
 
 # ======================= Simulation for visualisation =========================================
-# selected_gen = 22
-# selected_species = 337
-# vis_dir = "experiment_results/visualisation"
-# evo_vis = DA_Simulator( project_name=project_name, 
-#                         exp_results_dir = "experiment_results", 
-#                         vis_dir = vis_dir,
-#                         num_generations=num_generations,
-#                         num_species=num_species, 
-#                         time_step=time_step)
-# evo_vis.simulation_for_visualisation(selected_gen,selected_species)
+selected_gen = 26
+selected_species = 545
+vis_dir = "experiment_results/visualisation"
+evo_vis = DA_Simulator( project_name=project_name, 
+                        exp_results_dir = exp_results_dir, 
+                        vis_dir = vis_dir,
+                        num_generations=num_generations,
+                        num_species=num_species, 
+                        time_step=time_step)
+evo_vis.simulation_for_visualisation(selected_gen,selected_species)
 
 # ======================= preprocessing =========================================
 # da_pro = DA_data_processing(project_name, vis_dir, time_step)
