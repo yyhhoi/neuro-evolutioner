@@ -31,10 +31,11 @@ _, SBA_labels, num_neurons  = create_anatomy(ana_partition_matrix,
 
 
 # Define distribution of the parameters
-# (param1, param2, sampling_methods, dimension)
+# (param1, param2, sampling_methods, dimension, min, max)
 # sampling_methods = {0, 1, 2, 3}, 0 = Normal, 1 = rectified normal, 2 = Uniform, 3 = Log10Uniform
 # (param1, param2) = (mean, std) in Normal distribution. While, (param1, param2) = (min, max) in Uniform/Log10Uniform distribution
 # dimension = {1, 2}. 1 = 1d-array, 2 = 2d-array
+
 
 params_dict = {
     # Ensemble

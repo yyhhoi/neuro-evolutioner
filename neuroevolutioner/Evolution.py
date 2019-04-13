@@ -154,8 +154,10 @@ class Evolutioner(ABC):
         converter1, converter2 = ConfigsConverter(), ConfigsConverter()
         gene1, gene2 = converter1.configs2gene(configs1), converter1.configs2gene(configs2)
         chromosome1, chromosome2 = gene1["gene"]["chromosome"], gene2["gene"]["chromosome"]
+        chrome_min, chrome_max = gene1["gene"]["chromosome_min"], gene1["gene"]["chromosome_max"]
         c_chrom1, c_chrom2 = crossover(chromosome1, chromosome2)
         mutated_chrom = mutation(c_chrom1)
+        mutated_chrom = np.clip(mutated_chrom, chrome_min, chrome_max)
         gene1["gene"]["chromosome"] = mutated_chrom
         new_config = converter1.gene2configs(gene1)
         return new_config

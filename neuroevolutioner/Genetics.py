@@ -14,10 +14,34 @@ def log10uniform(low, high, size):
 def rectified_normal(mean, std, size):
     return np.maximum(0, normal(mean, std, size= size))
 
+def gen_boundary(p1, p2, method_num):
+    std_multiplier = 5
+    uniform_multiplier = 1/2
+    log10uniform_multiplier = 1/10
+    if method_num == 0: # Normal
+        min_num, max_num = p1 - std_multiplier*np.abs(p2), p1 + std_multiplier*np.abs(p2)
+    elif method_num == 1: # Rectified Normal
+        min_num, max_num = np.clip(p1 - std_multiplier*np.abs(p2), a_min=0, a_max=None), p1 + std_multiplier*np.abs(p2)
+    elif method_num == 2: # Uniform
+        min_num, max_num = p1*uniform_multiplier , p2/uniform_multiplier
+    elif method_num == 3: # Log10Uniform
+        min_num, max_num = p1*log10uniform_multiplier , p2/log10uniform_multiplier
+    return min_num, max_num
+
 def sampling_for_initialisation(p1, p2, num_neurons, output_dimensions, method_num):
+    # set up functions
     functions = [normal, rectified_normal, uniform, log10uniform]
     sizes = [(num_neurons,), (num_neurons, num_neurons)]
-    return functions[method_num](p1, p2, sizes[output_dimensions-1])
+    
+    # Sampling parameters from distributino
+    sampled_array = functions[method_num](p1, p2, sizes[output_dimensions-1])
+    
+    # Boundary (min, max) for mutation
+    lower_bound, upper_bound = gen_boundary(p1, p2, method_num)
+    array_min = np.ones(sampled_array.shape) * lower_bound
+    array_max = np.ones(sampled_array.shape) * upper_bound
+
+    return sampled_array, (array_min, array_max)
 
 def crossover(chromosome1, chromosome2, p=0.5):
     """
@@ -70,19 +94,25 @@ class ParamsInitialiser(ABC):
     def __init__(self):
         self.params_dict = dict()
         self.non_sampling_keys = ["num_neurons", "anatomy_matrix", "anatomy_labels", "SBA_labels", "types_matrix"]
-        self.non_mutating_keys = ["num_neurons", "anatomy_matrix", "anatomy_labels", "SBA_labels"]
-
+        self.non_mutating_keys = ["num_neurons", "anatomy_matrix", "anatomy_labels", "SBA_labels", "types_matrix"]
+        self.boundary_keys = ["boundary_min", "boundary_max"]
     def sample_new_configs(self):
         num_neurons = self.params_dict["num_neurons"]
         self.configs = dict()
+        self.configs["boundary_max"] = dict()
+        self.configs["boundary_min"] = dict()
         for params_key in self.params_dict.keys():
             if params_key in self.non_sampling_keys:
                 self.configs[params_key] = self.params_dict[params_key]
             else:
                 p1, p2, sampling_method, dimension = self.params_dict[params_key]
-                array = sampling_for_initialisation(p1, p2, num_neurons, dimension, sampling_method)
+                array, (arr_min, arr_max) = sampling_for_initialisation(p1, p2, num_neurons, dimension, sampling_method)
                 self.configs[params_key] = array
+                self.configs["boundary_min"][params_key] = arr_min
+                self.configs["boundary_max"][params_key] = arr_max
         self.configs["E_syn"] = self.configs["E_syn_inhib"] * (1 - self.configs["types_matrix"]) + self.configs["E_syn_excite"] * self.configs["types_matrix"]
+        self.configs["boundary_min"]["E_syn"] = self.configs["boundary_min"]["E_syn_inhib"]
+        self.configs["boundary_max"]["E_syn"] = self.configs["boundary_max"]["E_syn_excite"]
         return self.configs
 
     
@@ -91,39 +121,55 @@ class ParamsInitialiser(ABC):
         keys_list = []
         separation_idx = [0]
         all_arrays_np = np.array([])
+        all_arrays_min_np = np.array([])
+        all_arrays_max_np = np.array([])
         genes_dict = {"gene":dict(), "others": dict()}
         for key in configs.keys():
             if key in self.non_mutating_keys:
                 genes_dict["others"][key] = configs[key]
-            else:
+            elif key not in self.boundary_keys:
                 shapes_list.append(configs[key].shape)
                 keys_list.append(key)
 
-                # get index
+                # get arrays and min/max arrays
                 arr_flatten = configs[key].flatten()
+                arr_flatten_min = configs["boundary_min"][key].flatten()
+                arr_flatten_max = configs["boundary_max"][key].flatten()
+                
+                # get indexes
                 flatten_len = arr_flatten.shape[0]
-
                 current_index = separation_idx[-1] + flatten_len
                 separation_idx.append(current_index)
                 
                 # append to numpy
                 all_arrays_np = np.append(all_arrays_np, arr_flatten)
+                all_arrays_min_np = np.append(all_arrays_min_np, arr_flatten_min)
+                all_arrays_max_np = np.append(all_arrays_max_np, arr_flatten_max)
         
         genes_dict["gene"]["shapes"] = shapes_list
         genes_dict["gene"]["keys"] = keys_list
         genes_dict["gene"]["separation_idx"] = separation_idx
         genes_dict["gene"]["chromosome"] = all_arrays_np
+        genes_dict["gene"]["chromosome_min"] = all_arrays_min_np
+        genes_dict["gene"]["chromosome_max"] = all_arrays_max_np
         return genes_dict
     
     @staticmethod
     def gene2configs( genes_dict):
         configs = dict()
+        configs["boundary_min"] = dict()
+        configs["boundary_max"] = dict()
 
         length_list = len(genes_dict["gene"]["shapes"])
         for idx in range(length_list):
             arr_start_idx, arr_end_idx = genes_dict["gene"]["separation_idx"][idx], genes_dict["gene"]["separation_idx"][idx+1]
             arr_retrieved = genes_dict["gene"]["chromosome"][arr_start_idx: arr_end_idx].reshape(genes_dict["gene"]["shapes"][idx])
+            arr_min_retrieved = genes_dict["gene"]["chromosome_min"][arr_start_idx: arr_end_idx].reshape(genes_dict["gene"]["shapes"][idx])
+            arr_max_retrieved = genes_dict["gene"]["chromosome_max"][arr_start_idx: arr_end_idx].reshape(genes_dict["gene"]["shapes"][idx])
             configs[genes_dict["gene"]["keys"][idx]] = arr_retrieved
+            configs["boundary_min"][genes_dict["gene"]["keys"][idx]] = arr_min_retrieved
+            configs["boundary_max"][genes_dict["gene"]["keys"][idx]] = arr_max_retrieved
+
         for others_key in genes_dict["others"].keys():
             configs[others_key] = genes_dict["others"][others_key]
         return configs
@@ -132,10 +178,20 @@ class ParamsInitialiser(ABC):
     def test_if_two_configs_are_equal(configs1, configs2):
         for config_key in configs1.keys():
             try:
-                assert np.array_equal(configs1[config_key], configs2[config_key])
+                if (config_key == "boundary_max") or (config_key == "boundary_min"):
+                    for boundary_key in configs1[config_key].keys():
+                        try:
+                            assert np.array_equal(configs1[config_key][boundary_key], configs2[config_key][boundary_key])
+                            assert np.array_equal(configs1[config_key][boundary_key], configs2[config_key][boundary_key])
+                        except:
+                            print("Not matched in {}:{}".format(config_key, boundary_key))
+                            raise
+                else:    
+                    assert np.array_equal(configs1[config_key], configs2[config_key])
             except:
                 print("Not matched in {}".format(config_key))
-
+                raise
+        print("Gene conversion test finished. No error message means the conversion is successful.")
 
 
 class BC_ParamsInitialiser(ParamsInitialiser):
@@ -263,12 +319,12 @@ class DA_FitnessMeasurer(TL_FitnessMeasurer):
 
 if __name__ == "__main__":
     # # Debugging
-    # params_init = TL_ParamsInitialiser()
-    # configs = params_init.sample_new_configs()
-    # custom_init = Custom_ParamsInitialiser(configs)
-    # gene_dict = custom_init.configs2gene(configs)
-    # configs_recovered = custom_init.gene2configs(gene_dict)
-    # custom_init.test_if_two_configs_are_equal(configs, configs_recovered)
+    params_init = TL_ParamsInitialiser()
+    configs = params_init.sample_new_configs()
+    custom_init = ConfigsConverter()
+    gene_dict = custom_init.configs2gene(configs)
+    configs_recovered = custom_init.gene2configs(gene_dict)
+    custom_init.test_if_two_configs_are_equal(configs, configs_recovered)
     pass
 
 
