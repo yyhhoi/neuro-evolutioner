@@ -10,7 +10,7 @@ Reproducd by [simple_association.py][simple_asso_code]:
 python simple_association.py
 ```
 
-Additional synaptic rules such as heterosynaptic consolidation and homeostatic regulation ([Zenke et al. 2014](https://www.nature.com/articles/ncomms7922)) are implemented but disabled in this example. They can be found at [neuroevolutioner/SynapticDynamics.py][Syn_dynamics_code]
+Additional synaptic rules such as heterosynaptic consolidation and homeostatic regulation (reproduced from [Zenke et al. 2014](https://www.nature.com/articles/ncomms7922)) are implemented but disabled in this example. They can be found at [neuroevolutioner/SynapticDynamics.py][Syn_dynamics_code]
 
 ![simple_asso_fig]
 
