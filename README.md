@@ -5,7 +5,7 @@ The project aims to simulate neuronal ensembles and perform evolutionary algorit
 ## Simulation
 Results of simple hebbian potentiation of synaptic weights using Triplet spike-time-dependent-plasticity (STDP) rules and [AdEx neurons](http://www.scholarpedia.org/article/Adaptive_exponential_integrate-and-fire_model).
 
-Reproducd by [simple_association.py][simple_asso_code]:
+Reproduced by [simple_association.py][simple_asso_code]:
 ```python
 python simple_association.py
 ```
