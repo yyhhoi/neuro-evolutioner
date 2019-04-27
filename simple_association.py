@@ -120,6 +120,7 @@ firing_list = []
 ensemble = Ensemble_AdEx(simenv, num_neurons)
 ensemble.initialize_parameters(configs)
 
+# (Important) Simlution loop happens here.
 while simenv.sim_stop == False:
     time = simenv.getTime()
 
@@ -141,7 +142,7 @@ while simenv.sim_stop == False:
     recorder["LTD_trace"].append(ensemble.Weights.z_LTD.get_trace().copy())
     recorder["w(adex)"].append(ensemble.w.copy())
 
-    # Increment the simulation
+    # (Important) Update the dynamics and increment the simulation
     ensemble.state_update()
     simenv.increment()
 
@@ -167,8 +168,9 @@ for idx, key in enumerate(recorder.keys()):
     ax[idx].plot(np.arange(arr.shape[0]) * time_step, arr[:, 1], label=key + "_2")
     ax[idx].legend()
 
+ax[-1].set_xlabel("Time (s)")
 fig.suptitle("Neuronal states during simulation with AdEx Neurons and Triplet STDP rules")
-plt.savefig(os.path.join("figs/simple_association.png"))
+plt.savefig("figs/simple_association.png")
 plt.show()
 
 
