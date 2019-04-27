@@ -32,6 +32,7 @@ Note that the weight increase under STDP is unbounded. Regulation by homeostatic
 ## Evolution (In progress)
 
 Preview of implementations: [Genetics.py][genetics_module] and [Evolution.py][evolution_module].
+
 Example run code: 
 ```python
 python DA_analysis.py
