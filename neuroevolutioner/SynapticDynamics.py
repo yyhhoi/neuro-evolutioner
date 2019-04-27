@@ -72,6 +72,8 @@ class WeightsDynamics():
         self.w = np.zeros((self.num_neurons, self.num_neurons))
         self.time_step = time_step
 
+        self.dw_dt_hetero = np.zeros(self.w.shape)
+
         # Triplet LTP and Douplet LTD
         self.B = np.zeros((self.num_neurons, self.num_neurons))
 
@@ -100,6 +102,8 @@ class WeightsDynamics():
         dw_dt_LTP = self.A * self.z_LTP.get_2d_cols() * self.z_LTP_slow.get_2d_rows_previous() * firing_mask_2d_rows
         dw_dt_LTD = -self.B * self.z_LTD.get_2d_rows() * firing_mask_2d_cols
         dw_dt_hetero = -self.beta * (self.w - self.w_snake) * np.power(self.z_LTD.get_2d_rows_previous(), 3) * firing_mask_2d_rows
+        self.dw_dt_hetero = dw_dt_hetero # For recording
+
         dw_dt_transmitter = self.transmitter_constants * firing_mask_2d_cols
         dw_dt_excitatory = (self.types > 0.5) * (dw_dt_LTP + dw_dt_LTD + dw_dt_hetero + dw_dt_transmitter)
 

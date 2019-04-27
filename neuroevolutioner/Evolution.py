@@ -1,7 +1,8 @@
 from neuroevolutioner.Environments import Simulation
 from neuroevolutioner.Ensembles import Ensemble_AdEx
 from neuroevolutioner.utils import load_pickle, write_pickle
-from neuroevolutioner.Genetics import TL_ParamsInitialiser, ConfigsConverter, TL_FitnessMeasurer, crossover, mutation, DA_ParamsInitialiser, DA_FitnessMeasurer
+from neuroevolutioner.Genetics import TL_ParamsInitialiser, ConfigsConverter, TL_FitnessMeasurer, crossover, mutation, \
+    DA_ParamsInitialiser, DA_FitnessMeasurer
 from neuroevolutioner.Experiments import TL_Experimenter, DA_Experimenter
 from neuroevolutioner.Probes import Probe
 
@@ -11,8 +12,10 @@ import numpy as np
 import pandas as pd
 from glob import glob
 
+
 class Evolutioner(ABC):
-    def __init__(self, project_name, exp_results_dir="", num_generations=10, num_species=1000, time_step = 0.005, I_ext_multiplier = 1e-10):
+    def __init__(self, project_name, exp_results_dir="", num_generations=10, num_species=1000, time_step=0.005,
+                 I_ext_multiplier=1e-10):
         self.project_name, self.num_gens, self.num_species = project_name, num_generations, num_species
         self.activity_results_filename, self.gene_results_filename, self.HOF_filename = "activity.csv", "gene.pickle", "hall_of_fame.csv"
         self.winners_filename, self.finish_mark_filename = "winners.csv", "finished.txt"
@@ -22,25 +25,25 @@ class Evolutioner(ABC):
         self.I_ext_multiplier = I_ext_multiplier
         self.time_step = time_step
         self.measurer = None
-        
 
     def proliferate_one_generation(self, gen_idx):
         self._initialise_HOF(gen_idx)
         for species_idx in range(self.num_species):
-            if os.path.isfile(self.get_finished_mark_path(gen_idx, species_idx)) :    
+            if os.path.isfile(self.get_finished_mark_path(gen_idx, species_idx)):
                 print("Generation {} and species {} exist. Skipped".format(gen_idx, species_idx))
             else:
                 if gen_idx == 0:
                     configs = None
                 else:
                     print("Sampling new configs from winners")
-                    configs = self._sample_configs_from_winners(gen_idx-1) 
+                    configs = self._sample_configs_from_winners(gen_idx - 1)
                 print("Generation: {} | Species: {}/{}".format(gen_idx, species_idx, self.num_species))
                 self._single_simulation(gen_idx=gen_idx, species_idx=species_idx, configs=configs)
         # self.evaluate_one_generation(gen_idx) # Produce hall_of_frame in gen_dir
         self.select_winners(gen_idx)
+
     def _single_simulation(self, gen_idx, species_idx, configs=None):
-        
+
         # Define paths
         offspring_results_dir = self.get_species_dir(gen_idx, species_idx)
         os.makedirs(offspring_results_dir, exist_ok=True)
@@ -60,12 +63,12 @@ class Evolutioner(ABC):
         simenv = Simulation(exper.max_time, epsilon=self.time_step)
         ensemble = Ensemble_AdEx(simenv, num_neurons)
         ensemble.initialize_parameters(configs)
-        
+
         # Initialise probing
         self.probe = Probe(
-            num_neurons = num_neurons,
-            activity_record_path = activity_record_path,
-            gene_save_path = gene_save_path
+            num_neurons=num_neurons,
+            activity_record_path=activity_record_path,
+            gene_save_path=gene_save_path
         )
         # Save genes
         self.probe.save_gene(configs)
@@ -77,7 +80,7 @@ class Evolutioner(ABC):
         activity = pd.read_csv(self.get_activity_path(gen_idx, species_idx))
         fitness_score = self._calc_fitness_score(activity)
         self._write_to_HOF(gen_idx, species_idx, fitness_score)
-        print("Fitness: %0.4f"%(fitness_score))
+        print("Fitness: %0.4f" % (fitness_score))
 
         # Mark it as finsihed
         with open(self.get_finished_mark_path(gen_idx, species_idx), "w") as fh:
@@ -92,7 +95,7 @@ class Evolutioner(ABC):
                     fh.write("gen_idx,species_idx,score\n")
             else:
                 # Maintain the winners in previous generation in the current Hall of Fame
-                previous_winners_df = pd.read_csv(self.get_winners_path(gen_idx-1))
+                previous_winners_df = pd.read_csv(self.get_winners_path(gen_idx - 1))
                 previous_winners_df.to_csv(self.get_HOF_path(gen_idx), index=False)
         else:
             pass
@@ -102,7 +105,7 @@ class Evolutioner(ABC):
             fh_a.write("%d,%d,%0.4f\n" % (gen_idx, species_idx, fitness_score))
 
     def evaluate_one_generation(self, gen_idx):
-        
+
         # Sample all species' dirs
         all_species_dirs = sorted(glob(os.path.join(self.get_generation_dir(gen_idx), "*/")))
         num_species = len(all_species_dirs)
@@ -113,18 +116,17 @@ class Evolutioner(ABC):
                 fh.write("gen_idx,species_idx,score\n")
         else:
             # Maintain the winners in previous generation in the current Hall of Fame
-            previous_winners_df = pd.read_csv(self.get_winners_path(gen_idx-1))
+            previous_winners_df = pd.read_csv(self.get_winners_path(gen_idx - 1))
             previous_winners_df.to_csv(self.get_HOF_path(gen_idx), index=False)
-        
+
         # Loop through all species, calculate fitness and write to record.
         for i in range(num_species):
-
             activity = pd.read_csv(self.get_activity_path(gen_idx, i))
             # Evaluate the fitness score
             fitness_score = self._calc_fitness_score(activity)
-            self._write_to_HOF( gen_idx, i, fitness_score)
+            self._write_to_HOF(gen_idx, i, fitness_score)
             print("Evaluated Gen:{} | Species: {}/{} | Score: {}".format(gen_idx, i, num_species, fitness_score))
-        
+
     def select_winners(self, gen_idx, fraction=0.1):
         num_winners_to_select = int(self.num_species * fraction)
         HOF_df = pd.read_csv(self.get_HOF_path(gen_idx))
@@ -132,19 +134,17 @@ class Evolutioner(ABC):
         HOF_df_selected = HOF_df.iloc[0:num_winners_to_select, ]
         HOF_df_selected.to_csv(self.get_winners_path(gen_idx), index=False)
 
-    
-
     def _get_winners_idx(self, gen_idx):
         winners_df = pd.read_csv(self.get_winners_path(gen_idx))
         winners_idx_np = np.array(winners_df[["gen_idx", "species_idx"]])
-        
+
         return winners_idx_np
 
     def _sample_configs_from_winners(self, gen_idx):
         # Get winners and sample two from them
-        winners_idx_np = self._get_winners_idx( gen_idx) # ndarray with shape (num_winners, 2)
+        winners_idx_np = self._get_winners_idx(gen_idx)  # ndarray with shape (num_winners, 2)
         ran_vec = np.random.permutation(winners_idx_np.shape[0])
-        winner1, winner2 = winners_idx_np[ran_vec,:][0:2, :]
+        winner1, winner2 = winners_idx_np[ran_vec, :][0:2, :]
 
         # Load the configs according to the winner's generaiton and species id
         configs1 = load_pickle(self.get_gene_results_path(winner1[0], winner1[1]))
@@ -167,7 +167,7 @@ class Evolutioner(ABC):
         if gen_idx == 0:
             configs = None
         else:
-            configs = self._sample_configs_from_winners(gen_idx-1) 
+            configs = self._sample_configs_from_winners(gen_idx - 1)
         return configs
 
     @abstractmethod
@@ -182,25 +182,28 @@ class Evolutioner(ABC):
         # measurer.build_score_criteria()
         # fitness_score = measurer.calc_fitness()
         return None
+
     @abstractmethod
     def _initialise_experimenter(self, num_neurons, anatomy_labels):
         # exper = TL_Experimenter(num_neurons, anatomy_labels)
         return None
+
     @abstractmethod
     def _write_out_probe(self, time, steps, condition, firing_mask_str, weights_np):
         # probe.write_out_activity(time, condition, ensemble.firing_mask.get_mask().astype(int).astype(str))    
         # probe.save_weights(time, condition, ensemble.firing_mask.get_mask().astype(int).astype(str))    
         return None
+
     def _loop_simulate(self, simenv, ensemble, exper):
         # Simulation starts
         while simenv.sim_stop == False:
-            time  = simenv.getTime()
+            time = simenv.getTime()
             steps = simenv.steps
             # Print progress
-            print("\r{}/{}".format(time,exper.max_time), flush=True, end="")
-            
+            print("\r{}/{}".format(time, exper.max_time), flush=True, end="")
+
             # Get current conditions and amount of external currents, given current time
-            _, condition, label,  I_ext = exper.get_stimulation_info(time)
+            _, condition, label, I_ext = exper.get_stimulation_info(time)
 
             # Apply current and update the dynamics
             ensemble.I_ext = I_ext * self.I_ext_multiplier
@@ -210,9 +213,8 @@ class Evolutioner(ABC):
             simenv.increment()
 
             # Write out records
-            self._write_out_probe( time, steps, condition, ensemble.firing_mask.get_mask().astype(int).astype(str), ensemble.Weights.get_weights())
-
-    
+            self._write_out_probe(time, steps, condition, ensemble.firing_mask.get_mask().astype(int).astype(str),
+                                  ensemble.Weights.get_weights())
 
     # @staticmethod
     # def _loop_simulate(simenv, ensemble, exper, probe, I_ext_multiplier):
@@ -221,7 +223,7 @@ class Evolutioner(ABC):
     #         time  = simenv.getTime()
     #         # Print progress
     #         print("\r{}/{}".format(time,exper.max_time), flush=True, end="")
-            
+
     #         # Get current conditions and amount of external currents, given current time
     #         _, condition, label,  I_ext = exper.get_stimulation_info(time)
 
@@ -234,74 +236,90 @@ class Evolutioner(ABC):
 
     #         # Write out records
     #         probe.write_out_activity(time, condition, ensemble.firing_mask.get_mask().astype(int).astype(str))
-    
 
     def get_generation_dir(self, gen_idx):
         return os.path.join(self.proj_results_dir, "generation_{}".format(gen_idx))
-    
+
     def get_species_dir(self, gen_idx, species_idx):
         return os.path.join(self.proj_results_dir, "generation_{}".format(gen_idx), "species_{}".format(species_idx))
-    def get_gene_results_path(self,gen_idx, species_idx):
-        return os.path.join(self.proj_results_dir, "generation_{}".format(gen_idx), "species_{}".format(species_idx), self.gene_results_filename)
+
+    def get_gene_results_path(self, gen_idx, species_idx):
+        return os.path.join(self.proj_results_dir, "generation_{}".format(gen_idx), "species_{}".format(species_idx),
+                            self.gene_results_filename)
 
     def get_activity_path(self, gen_idx, species_idx):
-        return os.path.join(self.proj_results_dir, "generation_{}".format(gen_idx), "species_{}".format(species_idx), self.activity_results_filename)
+        return os.path.join(self.proj_results_dir, "generation_{}".format(gen_idx), "species_{}".format(species_idx),
+                            self.activity_results_filename)
 
     def get_finished_mark_path(self, gen_idx, species_idx):
-        return os.path.join(self.proj_results_dir, "generation_{}".format(gen_idx), "species_{}".format(species_idx), self.finish_mark_filename)
+        return os.path.join(self.proj_results_dir, "generation_{}".format(gen_idx), "species_{}".format(species_idx),
+                            self.finish_mark_filename)
+
     def get_winners_path(self, gen_idx):
         return os.path.join(self.proj_results_dir, "generation_{}".format(gen_idx), self.winners_filename)
+
     def get_HOF_path(self, gen_idx):
         return os.path.join(self.proj_results_dir, "generation_{}".format(gen_idx), self.HOF_filename)
 
 
 class TL_Evolutioner(Evolutioner):
-    def __init__(self, project_name,exp_results_dir = "", num_generations=10, num_species=1000, time_step = 0.0005):
-        super(TL_Evolutioner, self).__init__(project_name, exp_results_dir, num_generations=num_generations, num_species=num_species, time_step=time_step)
+    def __init__(self, project_name, exp_results_dir="", num_generations=10, num_species=1000, time_step=0.0005):
+        super(TL_Evolutioner, self).__init__(project_name, exp_results_dir, num_generations=num_generations,
+                                             num_species=num_species, time_step=time_step)
+
     def _sample_new_configs(self):
         params_initialiser = TL_ParamsInitialiser()
         configs = params_initialiser.sample_new_configs()
         return configs
+
     def _calc_fitness_score(self, activity):
         self.measurer = TL_FitnessMeasurer(activity, self.time_step)
         fitness_score = self.measurer.calc_fitness()
         return fitness_score
+
     def _initialise_experimenter(self, num_neurons, anatomy_labels):
         exper = TL_Experimenter(num_neurons, anatomy_labels)
         return exper
+
     def _write_out_probe(self, time, steps, condition, firing_mask_str, weights_np):
-        self.probe.write_out_activity(time, condition, firing_mask_str)    
+        self.probe.write_out_activity(time, condition, firing_mask_str)
+
 
 class DA_Evolutioner(Evolutioner):
-    def __init__(self, project_name, exp_results_dir="", num_generations=10, num_species=1000, time_step = 0.0001):
-        super(DA_Evolutioner, self).__init__(project_name = project_name, 
-                                            exp_results_dir = exp_results_dir, 
-                                            num_generations=num_generations, 
-                                            num_species=num_species, 
-                                            time_step=time_step)
+    def __init__(self, project_name, exp_results_dir="", num_generations=10, num_species=1000, time_step=0.0001):
+        super(DA_Evolutioner, self).__init__(project_name=project_name,
+                                             exp_results_dir=exp_results_dir,
+                                             num_generations=num_generations,
+                                             num_species=num_species,
+                                             time_step=time_step)
+
     def _sample_new_configs(self):
         params_initialiser = DA_ParamsInitialiser()
         configs = params_initialiser.sample_new_configs()
         return configs
+
     def _calc_fitness_score(self, activity):
         self.measurer = DA_FitnessMeasurer(activity, self.time_step)
         fitness_score = self.measurer.calc_fitness()
         return fitness_score
+
     def _initialise_experimenter(self, num_neurons, anatomy_labels):
         exper = DA_Experimenter(num_neurons, anatomy_labels)
         return exper
+
     def _write_out_probe(self, time, steps, condition, firing_mask_str, weights_np):
-        self.probe.write_out_activity(time, condition, firing_mask_str)    
+        self.probe.write_out_activity(time, condition, firing_mask_str)
+
 
 class DA_Simulator(DA_Evolutioner):
-    def __init__(self, project_name, exp_results_dir, vis_dir, num_generations=10, num_species=1000, time_step = 0.0001):
-        super(DA_Simulator, self).__init__(project_name, exp_results_dir, num_generations=num_generations, num_species=num_species, time_step=time_step)
+    def __init__(self, project_name, exp_results_dir, vis_dir, num_generations=10, num_species=1000, time_step=0.0001):
+        super(DA_Simulator, self).__init__(project_name, exp_results_dir, num_generations=num_generations,
+                                           num_species=num_species, time_step=time_step)
         # Visulisation
         self.vis_dir = os.path.join(vis_dir, project_name)
         self.vis_weights_dirname = "weights"
 
     def simulation_for_visualisation(self, gen_idx, species_idx):
-
         # Retrieve configs and its information
         configs_path = self.get_gene_results_path(gen_idx, species_idx)
         configs = load_pickle(configs_path)
@@ -319,13 +337,13 @@ class DA_Simulator(DA_Evolutioner):
         simenv = Simulation(exper.max_time, epsilon=self.time_step)
         ensemble = Ensemble_AdEx(simenv, num_neurons)
         ensemble.initialize_parameters(configs)
-        
+
         # Initialise probing
         self.probe = Probe(
-            num_neurons = num_neurons,
-            activity_record_path = self.get_vis_activity_path(gen_idx, species_idx),
-            weights_record_dir =  self.get_vis_weights_dir(gen_idx, species_idx),
-            gene_save_path = self.get_vis_configs_path(gen_idx, species_idx)
+            num_neurons=num_neurons,
+            activity_record_path=self.get_vis_activity_path(gen_idx, species_idx),
+            weights_record_dir=self.get_vis_weights_dir(gen_idx, species_idx),
+            gene_save_path=self.get_vis_configs_path(gen_idx, species_idx)
         )
         # Save genes
         self.probe.save_gene(configs)
@@ -333,22 +351,26 @@ class DA_Simulator(DA_Evolutioner):
         # Simulation starts
         self._loop_simulate(simenv, ensemble, exper)
 
-
     def _write_out_probe(self, time, steps, condition, firing_mask_str, weights_np):
-        self.probe.write_out_activity(time, condition, firing_mask_str) 
-        weights_filename = "weights_%d.npy"% (steps)
+        self.probe.write_out_activity(time, condition, firing_mask_str)
+        weights_filename = "weights_%d.npy" % (steps)
         self.probe.save_weights(weights_filename, weights_np)
 
     # Directories for visualisation
     def create_vis_dir(self, gen_idx, species_idx):
-        os.makedirs(os.path.join(self.vis_dir,  "gen-{}_species-{}".format(gen_idx, species_idx)), exist_ok=True)
+        os.makedirs(os.path.join(self.vis_dir, "gen-{}_species-{}".format(gen_idx, species_idx)), exist_ok=True)
+
     def create_weights_dir(self, gen_idx, species_idx):
-        os.makedirs(os.path.join(self.vis_dir, "gen-{}_species-{}".format(gen_idx, species_idx), self.vis_weights_dirname), exist_ok=True)
-    
-    
+        os.makedirs(
+            os.path.join(self.vis_dir, "gen-{}_species-{}".format(gen_idx, species_idx), self.vis_weights_dirname),
+            exist_ok=True)
+
     def get_vis_activity_path(self, gen_idx, species_idx):
-        return os.path.join(self.vis_dir, "gen-{}_species-{}".format(gen_idx, species_idx), self.activity_results_filename)
+        return os.path.join(self.vis_dir, "gen-{}_species-{}".format(gen_idx, species_idx),
+                            self.activity_results_filename)
+
     def get_vis_configs_path(self, gen_idx, species_idx):
         return os.path.join(self.vis_dir, "gen-{}_species-{}".format(gen_idx, species_idx), self.gene_results_filename)
+
     def get_vis_weights_dir(self, gen_idx, species_idx):
         return os.path.join(self.vis_dir, "gen-{}_species-{}".format(gen_idx, species_idx), self.vis_weights_dirname)

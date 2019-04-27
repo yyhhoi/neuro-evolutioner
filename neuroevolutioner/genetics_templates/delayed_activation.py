@@ -4,7 +4,7 @@ from .template_creation_utils.utils import create_anatomy, create_types_DA
 
 # Goals:
 # 1. Sensory fires
-# 2. Firing activities reverberate in Bain
+# 2. Firing activities reverberate in Brain
 # 3. Only after a while, the Action fires,
 # such that activation of Action is delayed simply by network activity reverberation
 
