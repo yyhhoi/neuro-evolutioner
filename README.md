@@ -5,7 +5,7 @@ The project aims to simulate neuronal ensembles and perform evolutionary algorit
 ## Simulation
 Results of simple hebbian potentiation of synaptic weights using Triplet spike-time-dependent-plasticity (STDP) rules and [AdEx neurons](http://www.scholarpedia.org/article/Adaptive_exponential_integrate-and-fire_model).
 
-Reproduction with [simple_association.py][simple_asso_code].
+Reproducd by [simple_association.py][simple_asso_code].
 
 Additional synaptic rules such as heterosynaptic consolidation and homeostatic regulation ([Zenke et al. 2014](https://www.nature.com/articles/ncomms7922)) are implemented but disabled in this example. They can be found at [neuroevolutioner/SynapticDynamics.py][Syn_dynamics_code]
 
@@ -14,10 +14,11 @@ Additional synaptic rules such as heterosynaptic consolidation and homeostatic r
 ```
 Descriptions of plots from top to bottom:
 
-Plot# 1: Soma potentials with firing moments marked.
+Plot# 1: Soma potentials of neuron 1 and 2, with firing moments marked.
 Plot# 2: Increase of weights during pairing. (weight_1 = weight from neuron 1 to 2)
-Plot# 3-4: Synaptic and external current 
-Plot# 5-7: Traces of LTP, LTP_slow, LTD
+Plot# 3: Synaptic current. (syn_current_1 = input current into neuron 1) 
+Plot# 4: External current applied on neuron 1 and 2.
+Plot# 5-7: Traces of LTP, LTP_slow, LTD, for neuron 1 and 2,
 Plot# 8: The variable of short-term adaptation dynamics in AdEx Neuron.  
 ```
 
