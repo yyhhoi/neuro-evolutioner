@@ -3,23 +3,22 @@ import pandas as pd
 from neuroevolutioner.Evolution import DA_Evolutioner, DA_Simulator
 from neuroevolutioner.DataProcessing import DA_data_processing
 from neuroevolutioner.Visualisation import Visualiser_wrapper
-# import warnings
-# warnings.filterwarnings("error")
+
 
 project_name = "delayed_activation"
 exp_results_dir = "experiment_results"
-num_generations = 5
-num_species = 20
+num_generations = 40
+num_species = 1000
 time_step = 0.0005
 
 # # ======================= Evolution =========================================
-# evo = DA_Evolutioner(project_name = project_name,
-#                      exp_results_dir = "experiment_results", 
-#                      num_generations = num_generations, 
-#                      num_species = num_species,
-#                      time_step = time_step)
-# for i in range(num_generations):
-#     evo.proliferate_one_generation(i)
+evo = DA_Evolutioner(project_name = project_name,
+                     exp_results_dir = "experiment_results",
+                     num_generations = num_generations,
+                     num_species = num_species,
+                     time_step = time_step)
+for i in range(num_generations):
+    evo.proliferate_one_generation(i)
 
 
 

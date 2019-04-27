@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 from graphviz import Digraph
 from .DataProcessing import calculate_firing_rate
 from .utils import load_pickle
-import skimage.io as ski
+import skimage as ski
 import skvideo.io as skv
 import os
 from glob import glob

@@ -5,7 +5,7 @@ from glob import glob
 from neuroevolutioner.Genetics import DA_FitnessMeasurer
 import numpy as np
 import pdb
-gen_idx = 26
+gen_idx = 20
 time_step = 0.0005
 base_dir = "experiment_results/delayed_activation/generation_{}".format(gen_idx)
 HOF_path = os.path.join(base_dir, "hall_of_fame.csv")
@@ -57,7 +57,8 @@ for idx in range(HOF_df.shape[0]):
     firing_np_sum = np.sum(firing_np, axis = 1)
     firing_np = firing_np[firing_np_sum >0, :]
     print("Firing's Shape = {}\nStimuli's Shape = {}".format(firing_np.shape, stimuli_np.shape))
-    
+
+
     # For stimuli, we only need a subset of them
     np.random.seed(90)
     ran_vec = np.random.choice(stimuli_np.shape[0], size = (200,))
