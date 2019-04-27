@@ -25,7 +25,7 @@ Plot# 5-7: Traces of LTP, LTP_slow, LTD, for neuron 1 and 2,
 Plot# 8: The variable of short-term adaptation dynamics in AdEx Neuron.  
 ```
 
-After co-firing activities (Plot#1, x-axis between 3 - 4), weight between two neurons potentiated.
+After co-firing activities (Plot#1, time between 3s - 4s), weight between two neurons potentiated.
 
 Note that the weight increase under STDP is unbounded. Regulation by homeostatic/heterosynaptic dynamics is required for stability.
 
