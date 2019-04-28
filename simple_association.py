@@ -117,10 +117,12 @@ recorder = {
     "w(adex)": []
 }
 firing_list = []
+
+# (Important) Initialise the ensemble, with the configurations of parameters
 ensemble = Ensemble_AdEx(simenv, num_neurons)
 ensemble.initialize_parameters(configs)
 
-# (Important) Simlution loop happens here.
+# (Important) Simulation loop happens here.
 while simenv.sim_stop == False:
     time = simenv.getTime()
 
